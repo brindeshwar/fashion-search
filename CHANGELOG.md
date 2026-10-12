@@ -1,0 +1,25 @@
+# Changelog
+
+All notable changes to this project are documented here.
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-10-13
+
+### Added
+- Zero-shot tagging (category, colour, pattern, sleeve, style) with Marqo-FashionSigLIP.
+- Gradio app with text search, image search and a tag browser.
+- `fashion-search` CLI with the `index`, `app` and `evaluate` commands.
+- Evaluation comparing the 2025 MLP with zero-shot FashionSigLIP (`reports/results.md`).
+- Tests, ruff, pre-commit, GitHub Actions CI, and issue and PR templates.
+- Docs system for humans and coding agents: `AGENTS.md`, `CLAUDE.md`, `docs/`.
+
+### Changed
+- Moved the 2025 Fashion-MNIST notebook to `legacy/2025-fashion-mnist-mlp/`.
+- Moved the shirt photos to `data/shirts/`. They are no longer tracked in git.
+
+### Fixed (relative to the 2025 notebook)
+- The validation set is now normalised like the training set.
+- Early stopping now restores the best weights.
+- The shirt photos are now evaluated on a held-out split.

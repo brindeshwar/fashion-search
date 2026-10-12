@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fashion-search",
+      "runtimeExecutable": ".venv/Scripts/fashion-search.exe",
+      "runtimeArgs": ["app"],
+      "port": 7860
+    }
+  ]
+}
