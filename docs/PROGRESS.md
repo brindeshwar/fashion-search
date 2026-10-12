@@ -52,4 +52,6 @@ Newest first. Template:
 
 **Next:** v0.2 virtual try-on (task board above). The user chose "search first, try-on later".
 
-**Watch out:** the user's git identity is "Brindeshwar Sharma". No GitHub remote exists yet: ask before creating one or pushing.
+- Published as a public repo, https://github.com/brindeshwar/fashion-search. CI is green on Python 3.10 and 3.12.
+
+**Watch out:** CI warns that `actions/checkout@v4` and `setup-python@v5` run on deprecated Node 20. Dependabot should open bump PRs, so merge them. Ask before force-pushing, rewriting history or changing repo visibility.
