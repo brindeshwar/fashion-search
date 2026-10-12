@@ -1,0 +1,29 @@
+name: Bug report
+description: Something is broken or gives wrong results
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include the command you ran and the full error output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. fashion-search index --data-dir ...
+        2. ...
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "OS, Python version, GPU (or CPU), fashion-search --version"
