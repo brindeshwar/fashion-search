@@ -53,3 +53,14 @@ and mark the old one `Superseded`. Format: context → decision → consequences
 - **Evidence:** a 6-garment comparison (flat-lay vs model, `segmentation_free` on/off): "model" was clearly better on 3 of 5 catalogue shirts and similar on 1; every setting failed on wrinkled bed-photographed shirts. `segmentation_free` made little difference, so it stays at FASHN's default (True).
 - **Decision:** default `garment_photo_type="model"` in the API, CLI and UI (users can still switch it). Pin `onnxruntime-gpu>=1.20,<1.27` in the `[tryon]` extra.
 - **Consequences:** better default results. Revisit the ORT pin when torch moves to CUDA 13.
+
+## ADR-009: Web app = React (Vite + TypeScript) + FastAPI, "Virtual mirror" design
+- **Date:** 2026-10-13 · **Status:** Accepted
+- **Context:** The user found the Gradio UI weak and wanted a proper frontend. They chose design 5 of 5 ("Virtual mirror": your photo is the hero, with the wardrobe beside it).
+- **Backend alternatives:** FastAPI (same Python process as the models, async, typed, OpenAPI docs); Flask (no typing or validation); Node/Express + a Python model service (two runtimes, IPC); Django (too heavy).
+- **Decision:**
+  - **FastAPI** in `api.py`, reusing `Catalog`/`core`/`tryon` directly. One process serves `/api`, `/images` and the built SPA (`web/dist`).
+  - **Try-on as async jobs** (`jobs.py`: one worker thread, in-memory): `POST /api/tryon` returns 202 plus a job id, and the client polls about once a second. A 50 s blocking request would hit proxy timeouts and couldn't report progress. A single worker matches one GPU.
+  - **React 19 + Vite + TypeScript**, plain CSS with design tokens (no UI kit), lucide icons, Vitest and Testing Library. oxlint comes from the Vite template.
+  - Gradio stays as a developer tool (`fashion-search app`).
+- **Consequences:** two toolchains (Python and Node) and a CI job each. Jobs are lost on restart, which is fine locally; a deployment would need a persistent queue. The API has no auth, so it binds to 127.0.0.1 by default.

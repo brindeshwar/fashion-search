@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-13
+
+### Added
+- **Mirror web app**: React + TypeScript frontend (the "Virtual mirror" design) served by a new FastAPI backend. `fashion-search serve` runs it at http://127.0.0.1:8000.
+- Combined search: a text query plus tag filters in one request.
+- Try-on runs as a background job with queue position and a progress estimate; before/after slider; download; a "Your looks" history for the session.
+- Frontend tests (Vitest) and a `web` CI job (lint, typecheck, test, build).
+
+### Fixed
+- The low-VRAM warning no longer fires because of the app's own loaded try-on model.
+
 ## [0.2.0] - 2026-10-13
 
 ### Added

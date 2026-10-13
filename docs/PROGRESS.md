@@ -5,27 +5,24 @@ Update both at the end (see `AGENTS.md` → Session protocol).
 
 ## Status
 
-**Version:** 0.2.0 (branch `feat/virtual-try-on`, not merged) · **Milestone:** v0.2 virtual try-on · **Health:** green (try-on verified on RTX 4060; quality depends on garment photo)
+**Version:** 0.3.0 (branch `feat/web-app`, stacked on unmerged PR #3) · **Milestone:** v0.3 web app · **Health:** green (web app verified end to end on the RTX 4060)
 
 ## Task board
 
-### Now: v0.2 virtual try-on (branch `feat/virtual-try-on`)
-- [x] Research: FASHN VTON v1.5 needs ~8 GB VRAM in bf16. The model is Apache-2.0, but the human parser is non-commercial (ADR-007)
-- [x] `tryon.py`, app tab (search → pick garment → try on), `tryon` and `tryon-download` commands, tests with a fake pipeline, docs
-- [x] Install the extra and download the weights (2.2 GB); real try-on on the RTX 4060: ~49 s/image at 30 steps, 4.4 GB peak torch VRAM, pipeline load 8.4 s
-- [x] Settings ablation on 6 garments: `garment_photo_type="model"` beats "flat-lay" on our hanger/listing photos (flat-lay made long-sleeve shirts sleeveless and copied listing text/background). Default changed to "model"
-- [x] Fixed pose detection on CPU (pinned onnxruntime-gpu <1.27, ADR-008); `pytest -m slow` passes (2/2)
-- [x] CHANGELOG and ADR-008 for the "model" default
-- [ ] Push, PR, merge, tag v0.2.0 (user approved on 2026-10-13)
+### Now: merge and release
+- [ ] **The user merges PR #3** (v0.2 try-on; auto mode refuses merges without review), then tags v0.2.0
+- [ ] Open a PR for `feat/web-app` (v0.3), review and merge, tag v0.3.0
 
-### Next: v0.3 full-stack web app
-- [ ] The user picks one of 5 design directions (editorial, studio, masonry, minimal command bar, virtual mirror)
-- [ ] React frontend + API backend (stack in a new ADR), replacing Gradio as the main UI
+### Done in v0.3 (branch `feat/web-app`)
+- [x] 5 design directions shown; the user picked "Virtual mirror" (ADR-009)
+- [x] FastAPI backend (`api.py`, `jobs.py`): combined text + tag search, image search, safe image serving, async try-on jobs
+- [x] React + TS frontend (`web/`): mirror stage, fit bar, wardrobe rail, before/after slider, session looks, responsive layout, light and dark themes
+- [x] Tests: 43 pytest (11 API) + 13 Vitest; CI `web` job
+- [x] Verified in the browser: search -> pick -> try-on -> result (~60 s first run), mobile and light mode
 
 ### Later
 - [ ] Background removal or cropping for busy listing photos before try-on
 - [ ] Tag accuracy check: hand-label about 50 photos and report per-attribute accuracy in `reports/`
-- [ ] Combined search (text query + tag filters together)
 - [ ] Larger catalogue: a properly licensed dataset (e.g. DeepFashion or Fashionpedia, licence permitting)
 - [ ] Dockerfile and a deployment option (Hugging Face Spaces)
 
@@ -47,6 +44,13 @@ Newest first. Template:
 **Next:** ...
 **Watch out:** ...
 ```
+
+### 2026-10-13 · Claude Code (Opus 5.5): v0.3 web app
+**Did:** fixed ORT on CPU (ADR-008) and opened PR #3 (CI green; merging was blocked by auto mode, so the user must merge). The user picked design 5, "Virtual mirror". Built a FastAPI backend and a React frontend (ADR-009), checked end to end in the browser on the real GPU, and fixed two bugs found while testing (the compare slider started fully on "before", and a false low-VRAM warning came from our own loaded model).
+
+**Next:** the user merges PR #3. Then open the v0.3 PR from `feat/web-app` and tag both releases. After that: tag accuracy check, background removal before try-on, Docker.
+
+**Watch out:** `feat/web-app` is branched from `feat/virtual-try-on`, so if PR #3 is squash-merged, rebase `feat/web-app` onto main first. Keep `web/src/lib/api.ts` in sync with `api.py`.
 
 ### 2026-10-13 · Claude Code (Opus 5.5): try-on verification
 **Did:** installed `[tryon]` (user approved) and downloaded the weights. The first run crawled because another user job (`medsignal.baselines.encoder`) held 7.4 GB of the GPU; waited for it to finish (didn't kill it). Verified: 49 s/image, 4.4 GB peak. Ran an ablation (sheets in `artifacts/tryon_test/`, git-ignored), switched the default photo type to "model", and added `low_vram_warning`. 29 fast tests pass.
