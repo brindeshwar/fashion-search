@@ -132,9 +132,9 @@ def build_tryon_tab(catalog: Catalog) -> None:
         category = gr.Dropdown(["tops", "bottoms", "one-pieces"], value="tops", label="Category")
         photo_type = gr.Radio(
             ["flat-lay", "model"],
-            value="flat-lay",
+            value="model",
             label="Garment photo",
-            info="flat-lay = product shot, model = worn by a person",
+            info='"model" works best for hanger/listing photos (tested on our catalogue)',
         )
         steps = gr.Slider(10, 50, 30, step=5, label="Steps (quality vs speed)")
         seed = gr.Number(42, precision=0, label="Seed")

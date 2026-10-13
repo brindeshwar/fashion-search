@@ -48,6 +48,18 @@ def test_load_pipeline_without_setup_explains_how_to_install(monkeypatch, tmp_pa
         tryon.load_pipeline(tmp_path)
 
 
+@pytest.mark.parametrize(("free_gb", "warns"), [(1.0, True), (7.5, False)])
+def test_low_vram_warning(monkeypatch, free_gb, warns):
+    import torch
+
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(torch.cuda, "mem_get_info", lambda: (free_gb * 2**30, 8 * 2**30))
+    warning = tryon.low_vram_warning()
+    assert (warning is not None) == warns
+    if warns:
+        assert "1.0 GB" in warning
+
+
 def test_app_shows_setup_hint_when_tryon_unavailable(monkeypatch, catalog):
     from fashion_search.app import build_app
 

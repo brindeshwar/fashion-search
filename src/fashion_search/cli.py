@@ -30,7 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_tryon.add_argument("--garment", type=Path, required=True)
     p_tryon.add_argument("--out", type=Path, default=Path("tryon.png"))
     p_tryon.add_argument("--category", choices=["tops", "bottoms", "one-pieces"], default="tops")
-    p_tryon.add_argument("--garment-photo-type", choices=["flat-lay", "model"], default="flat-lay")
+    p_tryon.add_argument("--garment-photo-type", choices=["flat-lay", "model"], default="model")
     p_tryon.add_argument("--steps", type=int, default=30)
     p_tryon.add_argument("--seed", type=int, default=42)
     return parser

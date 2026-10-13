@@ -5,6 +5,7 @@ weights, ~8 GB VRAM) that is only loaded when someone actually asks for a try-on
 """
 
 import importlib.util
+import warnings
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -19,6 +20,7 @@ GarmentPhotoType = Literal["flat-lay", "model"]
 TRYON_REPO = "fashn-ai/fashn-vton-1.5"
 DWPOSE_REPO = "fashn-ai/DWPose"
 DWPOSE_FILES = ["yolox_l.onnx", "dw-ll_ucoco_384.onnx"]
+MIN_FREE_VRAM_GB = 5.0  # measured peak ~4.4 GB torch + ONNX pose/parser on RTX 4060
 
 INSTALL_HINT = (
     "Virtual try-on needs the optional extra and its weights (~2 GB):\n"
@@ -62,10 +64,32 @@ def download_weights(weights_dir: Path = TRYON_WEIGHTS_DIR) -> None:
     print("Done.")
 
 
+def low_vram_warning(min_free_gb: float = MIN_FREE_VRAM_GB) -> str | None:
+    """A warning if the GPU is too full for try-on, else None.
+
+    On Windows the driver silently spills into system RAM instead of failing, which makes
+    a ~1 min try-on take 10+ min, so warn before loading rather than after.
+    """
+    import torch
+
+    if not torch.cuda.is_available():
+        return "No CUDA GPU found: try-on will run on CPU and take many minutes."
+    free, _ = torch.cuda.mem_get_info()
+    if free / 2**30 < min_free_gb:
+        return (
+            f"Only {free / 2**30:.1f} GB of GPU memory is free "
+            f"(try-on needs ~{min_free_gb:.0f} GB). "
+            "Another process is probably using the GPU; try-on will be very slow."
+        )
+    return None
+
+
 @lru_cache(maxsize=1)
 def load_pipeline(weights_dir: Path = TRYON_WEIGHTS_DIR):
     if not is_available(weights_dir):
         raise RuntimeError(INSTALL_HINT)
+    if warning := low_vram_warning():
+        warnings.warn(warning, stacklevel=2)
     from fashn_vton import TryOnPipeline
 
     return TryOnPipeline(weights_dir=str(weights_dir))
@@ -75,7 +99,7 @@ def try_on(
     person: Image.Image,
     garment: Image.Image,
     category: FashnCategory = "tops",
-    garment_photo_type: GarmentPhotoType = "flat-lay",
+    garment_photo_type: GarmentPhotoType = "model",
     steps: int = 30,
     seed: int = 42,
 ) -> Image.Image:
