@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fashion-search"
-version = "0.1.0"
+version = "0.2.0"
 description = "Fashion visual search and zero-shot tagging with Marqo-FashionSigLIP"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,6 +24,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Pinned to a commit: FASHN VTON is not on PyPI. Human parser is non-commercial (ADR-007).
+tryon = [
+    "fashn-vton @ git+https://github.com/fashn-AI/fashn-vton-1.5@7c0f10af3f91ad4048fe9729c470a13ef905d25a",
+    # 1.27+ is built for CUDA 13; torch here uses CUDA 12.x, whose DLLs ORT 1.26 reuses.
+    "onnxruntime-gpu>=1.20,<1.27",
+]
 dev = ["pytest>=8", "ruff==0.17.0", "pre-commit>=3.7"]
 
 [project.scripts]

@@ -81,11 +81,68 @@ def build_app(catalog: Catalog) -> gr.Blocks:
             demo.load(browse, dropdowns, [out3, count])
 
         with gr.Tab("Virtual try-on"):
-            gr.Markdown(
-                "Coming next: put any of these shirts on a photo of a person "
-                "(FASHN VTON v1.5). See docs/PROGRESS.md."
-            )
+            build_tryon_tab(catalog)
     return demo
+
+
+def build_tryon_tab(catalog: Catalog) -> None:
+    from . import tryon
+
+    if not tryon.is_available():
+        gr.Markdown("### Virtual try-on is not set up\n```\n" + tryon.INSTALL_HINT + "\n```")
+        return
+
+    from .core import embed_texts
+
+    def find_garments(query):
+        if not query.strip():
+            return [], []
+        hits = catalog.top_k(embed_texts([query])[0], 10)
+        return [(catalog.path(i), catalog.table.category.iloc[i]) for i, _ in hits], [
+            i for i, _ in hits
+        ]
+
+    def pick(hit_ids, evt: gr.SelectData):
+        i = hit_ids[evt.index]
+        return catalog.path(i), tryon.fashn_category(catalog.table.category.iloc[i])
+
+    def run(person, garment, category, photo_type, steps, seed):
+        if person is None or garment is None:
+            raise gr.Error("Add a person photo and pick or upload a garment first.")
+        return tryon.try_on(person, garment, category, photo_type, steps, seed)
+
+    gr.Markdown(
+        "Put a catalogue item on a photo of a person with **FASHN VTON v1.5**. "
+        "The first run loads the model (~30 s)."
+    )
+    hit_ids = gr.State([])
+    with gr.Row():
+        with gr.Column():
+            person = gr.Image(type="pil", label="1. Person photo (front-facing works best)")
+        with gr.Column():
+            q = gr.Textbox(
+                label="2. Find a garment in the catalogue (or upload one below)",
+                placeholder="e.g. red plaid flannel",
+            )
+            hits = gr.Gallery(columns=5, height=200, object_fit="contain", show_label=False)
+            garment = gr.Image(type="pil", label="Selected garment", height=240)
+        with gr.Column():
+            output = gr.Image(label="Result", interactive=False)
+    with gr.Row():
+        category = gr.Dropdown(["tops", "bottoms", "one-pieces"], value="tops", label="Category")
+        photo_type = gr.Radio(
+            ["flat-lay", "model"],
+            value="model",
+            label="Garment photo",
+            info='"model" works best for hanger/listing photos (tested on our catalogue)',
+        )
+        steps = gr.Slider(10, 50, 30, step=5, label="Steps (quality vs speed)")
+        seed = gr.Number(42, precision=0, label="Seed")
+    q.submit(find_garments, q, [hits, hit_ids])
+    hits.select(pick, hit_ids, [garment, category])
+    gr.Button("3. Try it on", variant="primary").click(
+        run, [person, garment, category, photo_type, steps, seed], output
+    )
 
 
 def launch(catalog: Catalog, port: int = 7860) -> None:

@@ -21,7 +21,7 @@ This is the 2026 rebuild of a 2025 Fashion-MNIST classifier, which is kept in
 | **Image search** | Upload a photo → visually similar items |
 | **Tag browser** | Filter the catalogue by any combination of tags |
 | **Evaluation** | Old MLP vs new model, see [reports/results.md](reports/results.md) |
-| _Virtual try-on_ | _Planned for v0.2, see [docs/PROGRESS.md](docs/PROGRESS.md)_ |
+| **Virtual try-on** | Put any catalogue item on a photo of a person (FASHN VTON v1.5, optional) |
 
 ## Old vs new: the short version
 
@@ -52,7 +52,18 @@ Put your clothing photos in `data/shirts/` (see [data/README.md](data/README.md)
 .venv/Scripts/fashion-search app
 ```
 
-Then open http://localhost:7860. On Linux or macOS, use `.venv/bin/` instead of `.venv/Scripts/`.
+Then open http://localhost:7860.
+
+**Optional: virtual try-on.** This needs an NVIDIA GPU with about 8 GB of VRAM and downloads about 2 GB.
+
+```bash
+.venv/Scripts/python -m pip install -e ".[tryon]"
+.venv/Scripts/fashion-search tryon-download
+.venv/Scripts/fashion-search tryon --person me.jpg --garment data/shirts/x.jpg --out out.png
+```
+
+The try-on model is Apache-2.0, but its human-parser dependency is licensed for
+non-commercial use only (see [ADR-007](docs/DECISIONS.md)). On Linux or macOS, use `.venv/bin/` instead of `.venv/Scripts/`.
 
 ## Project layout
 
@@ -70,5 +81,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). AI coding agents should start with [AGEN
 
 ## License
 
-Code: [MIT](LICENSE). The model is Apache-2.0 (Marqo). The photos in `data/` are not
+Code: [MIT](LICENSE). FashionSigLIP is Apache-2.0 (Marqo). FASHN VTON v1.5 is Apache-2.0,
+but its human parser is non-commercial (NVIDIA SegFormer licence). The photos in `data/` are not
 included or licensed by this repo.

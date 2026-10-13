@@ -39,3 +39,17 @@ and mark the old one `Superseded`. Format: context → decision → consequences
 - **Date:** 2026-10-13 · **Status:** Accepted
 - **Context:** several coding agents (Claude Code, Codex, Cursor, Copilot, Gemini) may work on this repo, and each looks for a different file name.
 - **Decision:** `AGENTS.md` is the single source of truth. `CLAUDE.md` imports it with `@AGENTS.md` and adds only Claude-specific notes. Project state lives in `docs/PROGRESS.md`, never in any one agent's private memory.
+
+## ADR-007: FASHN VTON v1.5 for virtual try-on, as an optional extra
+- **Date:** 2026-10-13 · **Status:** Accepted
+- **Context:** v0.2 adds "see this shirt on a person". The candidates in October 2026: FASHN VTON v1.5 (Jan 2026, Apache-2.0 model weights, maskless, ~8 GB VRAM), CatVTON and IDM-VTON (2024, non-commercial licences, older), and OpenTryOn (a toolkit wrapping several models).
+- **Decision:** use FASHN VTON v1.5 through its own `TryOnPipeline`, installed as an optional `[tryon]` extra pinned to commit `7c0f10a`, because the package isn't on PyPI.
+- **Licence caveat:** the try-on model and code are Apache-2.0, but the `fashn-human-parser` dependency inherits the **NVIDIA SegFormer licence (non-commercial)**. This project is non-commercial. Any commercial use must replace the parser or obtain a licence.
+- **Consequences:** the base install stays light and CI never downloads it. Try-on is close to the 8 GB VRAM limit of the dev laptop (RTX 4060). If it runs out of memory, the first things to try are fewer steps or freeing FashionSigLIP before loading try-on.
+
+## ADR-008: Try-on defaults: "model" photo type, onnxruntime-gpu < 1.27
+- **Date:** 2026-10-13 · **Status:** Accepted
+- **Context:** On our catalogue (shirts on hangers, beds and walls, often with listing text), FASHN's "flat-lay" mode turned long-sleeve shirts sleeveless and copied text and background into the garment. Separately, onnxruntime-gpu 1.27+ is built for CUDA 13, but our torch uses CUDA 12.6, so pose detection silently fell back to the CPU.
+- **Evidence:** a 6-garment comparison (flat-lay vs model, `segmentation_free` on/off): "model" was clearly better on 3 of 5 catalogue shirts and similar on 1; every setting failed on wrinkled bed-photographed shirts. `segmentation_free` made little difference, so it stays at FASHN's default (True).
+- **Decision:** default `garment_photo_type="model"` in the API, CLI and UI (users can still switch it). Pin `onnxruntime-gpu>=1.20,<1.27` in the `[tryon]` extra.
+- **Consequences:** better default results. Revisit the ORT pin when torch moves to CUDA 13.

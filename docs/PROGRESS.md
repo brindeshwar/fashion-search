@@ -5,20 +5,25 @@ Update both at the end (see `AGENTS.md` → Session protocol).
 
 ## Status
 
-**Version:** 0.1.0 · **Milestone:** v0.2 virtual try-on · **Health:** green (search app works, tests pass)
+**Version:** 0.2.0 (branch `feat/virtual-try-on`, not merged) · **Milestone:** v0.2 virtual try-on · **Health:** green (try-on verified on RTX 4060; quality depends on garment photo)
 
 ## Task board
 
-### Now
-- _(nothing in progress)_
+### Now: v0.2 virtual try-on (branch `feat/virtual-try-on`)
+- [x] Research: FASHN VTON v1.5 needs ~8 GB VRAM in bf16. The model is Apache-2.0, but the human parser is non-commercial (ADR-007)
+- [x] `tryon.py`, app tab (search → pick garment → try on), `tryon` and `tryon-download` commands, tests with a fake pipeline, docs
+- [x] Install the extra and download the weights (2.2 GB); real try-on on the RTX 4060: ~49 s/image at 30 steps, 4.4 GB peak torch VRAM, pipeline load 8.4 s
+- [x] Settings ablation on 6 garments: `garment_photo_type="model"` beats "flat-lay" on our hanger/listing photos (flat-lay made long-sleeve shirts sleeveless and copied listing text/background). Default changed to "model"
+- [x] Fixed pose detection on CPU (pinned onnxruntime-gpu <1.27, ADR-008); `pytest -m slow` passes (2/2)
+- [x] CHANGELOG and ADR-008 for the "model" default
+- [ ] Push, PR, merge, tag v0.2.0 (user approved on 2026-10-13)
 
-### Next: v0.2 virtual try-on
-- [ ] Check that FASHN VTON v1.5 fits in 8 GB VRAM at fp16 (official repo and model card; confirm the licence is Apache-2.0)
-- [ ] `src/fashion_search/tryon.py`: lazy model load, `try_on(person_img, garment_img) -> PIL.Image`
-- [ ] Replace the placeholder "Virtual try-on" tab: upload a person photo, pick a garment from search results, show the output
-- [ ] Slow test for try-on and an ADR for the model choice
+### Next: v0.3 full-stack web app
+- [ ] The user picks one of 5 design directions (editorial, studio, masonry, minimal command bar, virtual mirror)
+- [ ] React frontend + API backend (stack in a new ADR), replacing Gradio as the main UI
 
 ### Later
+- [ ] Background removal or cropping for busy listing photos before try-on
 - [ ] Tag accuracy check: hand-label about 50 photos and report per-attribute accuracy in `reports/`
 - [ ] Combined search (text query + tag filters together)
 - [ ] Larger catalogue: a properly licensed dataset (e.g. DeepFashion or Fashionpedia, licence permitting)
@@ -29,7 +34,8 @@ Update both at the end (see `AGENTS.md` → Session protocol).
 - [x] Professional repo setup: package, CLI, tests, CI, docs system, templates
 
 ## Known issues
-- The "Virtual try-on" tab is a placeholder.
+- Try-on quality is poor on wrinkled shirts photographed on beds or walls (any setting). Clean garment photos work well.
+- Try-on slows to 10+ min if another process holds the GPU (the Windows driver spills to RAM). `low_vram_warning()` now warns about this.
 - The tags are zero-shot and not yet measured against hand labels. Spot checks look good, but bright colours on multi-colour prints are sometimes tagged "multicolored".
 - `evaluate.py` takes about 3 min and downloads Fashion-MNIST (~30 MB) on first run.
 
@@ -41,6 +47,20 @@ Newest first. Template:
 **Next:** ...
 **Watch out:** ...
 ```
+
+### 2026-10-13 · Claude Code (Opus 5.5): try-on verification
+**Did:** installed `[tryon]` (user approved) and downloaded the weights. The first run crawled because another user job (`medsignal.baselines.encoder`) held 7.4 GB of the GPU; waited for it to finish (didn't kill it). Verified: 49 s/image, 4.4 GB peak. Ran an ablation (sheets in `artifacts/tryon_test/`, git-ignored), switched the default photo type to "model", and added `low_vram_warning`. 29 fast tests pass.
+
+**Next:** `pytest -m slow`, then with the user's OK push `feat/virtual-try-on`, open a PR, merge, tag v0.2.0.
+
+**Watch out:** never kill GPU processes that aren't ours. Check `nvidia-smi` before long GPU runs.
+
+### 2026-10-13 · Claude Code (Opus 5.5): v0.2 try-on
+**Did:** researched current try-on models and chose FASHN VTON v1.5 (ADR-007; documented the non-commercial human-parser licence). Added `tryon.py`, the app tab, the CLI commands, a `[tryon]` extra pinned to commit 7c0f10a, and 9 new tests (27 fast tests pass). The app shows setup instructions when try-on isn't installed (checked in the browser).
+
+**Next:** the user installs the extra. Then download the weights, run a real try-on and check VRAM, run the slow tests, open a PR and tag v0.2.0.
+
+**Watch out:** auto mode refuses `pip install git+https://...`, so the user must run or approve it. VRAM is tight on 8 GB: if it runs out of memory, try `--steps 20`, or free the FashionSigLIP model first.
 
 ### 2026-10-13 · Claude Code (Opus 5.5)
 **Did:**

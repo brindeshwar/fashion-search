@@ -1,6 +1,6 @@
 # Architecture
 
-_Last updated: 2026-10-13 (v0.1.0)_
+_Last updated: 2026-10-13 (v0.2.0)_
 
 ## Overview
 
@@ -30,7 +30,8 @@ softmax over dot products with the prompts for each attribute. No training happe
 | `indexing.py` | `build_index(data_dir, index_dir)`: embeds, tags and saves | via core |
 | `app.py` | `build_app(catalog)` builds the Gradio Blocks; `launch()` serves it. Imports core lazily inside `build_app` | lazily |
 | `evaluate.py` | Old MLP vs zero-shot comparison; writes `reports/results.md` | yes |
-| `cli.py` | `fashion-search {index,app,evaluate}`; heavy imports are deferred | no |
+| `tryon.py` | Optional FASHN VTON v1.5 wrapper: `is_available`, `download_weights`, `load_pipeline` (cached, lazy), `try_on`, `fashn_category` | lazily (via `fashn_vton`) |
+| `cli.py` | `fashion-search {index,app,evaluate,tryon,tryon-download}`; heavy imports are deferred | no |
 
 ## Invariants
 
@@ -46,8 +47,16 @@ softmax over dot products with the prompts for each attribute. No training happe
 - **Test sets:** the Fashion-MNIST test set (both raw and colour-inverted), plus 100 held-out shirt photos (`SEED = 0`).
 - The inverted test set is what exposes the baseline's shortcut: it learned "light background = shirt". See `reports/results.md`.
 
-## Planned: virtual try-on (v0.2)
+## Virtual try-on (v0.2, optional)
 
-There will be a new `tryon.py` module wrapping FASHN VTON v1.5, plus a Gradio tab that
-takes a person photo and a catalogue item. It must load lazily and stay separate from
-`core.py`, because it's a different model with a large VRAM footprint. See `docs/PROGRESS.md`.
+```
+ person photo ─┐
+               ├─► tryon.try_on ─► fashn_vton.TryOnPipeline ─► result image
+ garment ──────┘     (category: tops | bottoms | one-pieces, garment photo: flat-lay | model)
+   └─ picked from catalogue search (app tab) or uploaded / --garment (CLI)
+```
+
+- Installed with the `[tryon]` extra, which pins `fashn-vton` to a git commit. Weights (~2 GB) go to `artifacts/weights/fashn-vton-1.5/` via `fashion-search tryon-download`. The human parser goes to the Hugging Face cache.
+- **Invariant:** nothing imports `fashn_vton` unless try-on is actually used. `app.build_tryon_tab` checks `tryon.is_available()` and shows setup instructions otherwise, so the base install, the fast tests and CI never need it.
+- `fashn_category()` maps our taxonomy to FASHN's categories (`dress` → `one-pieces`, everything else → `tops`).
+- VRAM: about 8 GB for 768×1024 output in bf16 (RTX 30/40). FashionSigLIP adds about 0.8 GB if both are loaded.

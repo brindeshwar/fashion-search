@@ -5,6 +5,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-13
+
+### Added
+- Virtual try-on with FASHN VTON v1.5 (optional `[tryon]` extra): a new app tab that takes a person photo plus a garment found by search or uploaded.
+- `fashion-search tryon` and `fashion-search tryon-download` commands.
+- A warning before try-on when too little GPU memory is free.
+
+### Changed
+- Try-on defaults to the "model" garment photo type, which works much better on hanger/listing photos (ADR-008).
+
+### Fixed
+- Pose detection fell back to CPU: the `[tryon]` extra now pins `onnxruntime-gpu<1.27`, the last CUDA 12 build.
+
 ## [0.1.0] - 2026-10-13
 
 ### Added

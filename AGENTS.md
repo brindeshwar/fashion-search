@@ -9,8 +9,8 @@ this file, so keep the shared rules here and put tool-specific notes in that too
 `fashion-search` is a fashion visual search and zero-shot tagging app. It embeds
 clothing photos with **Marqo-FashionSigLIP**, a fashion-specific vision-language
 model, and auto-tags each one by category, colour, pattern, sleeve and style. It
-then serves text search, image search and tag browsing in a Gradio UI. It replaces
-the 2025 Fashion-MNIST MLP in `legacy/`. The next milestone is a virtual try-on tab.
+then serves text search, image search, tag browsing and optional virtual try-on
+(FASHN VTON v1.5) in a Gradio UI. It replaces the 2025 Fashion-MNIST MLP in `legacy/`.
 
 ## The docs system: read first, update last
 
@@ -42,6 +42,11 @@ python -m venv .venv
 .venv/Scripts/fashion-search app        # Gradio UI on http://localhost:7860
 .venv/Scripts/fashion-search evaluate   # writes reports/results.md (~3 min on GPU)
 
+# optional virtual try-on (~2 GB weights, ~8 GB VRAM)
+.venv/Scripts/python -m pip install -e ".[tryon]"
+.venv/Scripts/fashion-search tryon-download
+.venv/Scripts/fashion-search tryon --person p.jpg --garment g.jpg --out out.png
+
 # checks (must pass before every commit; CI runs the same)
 .venv/Scripts/ruff check . && .venv/Scripts/ruff format --check .
 .venv/Scripts/pytest                    # fast tests, no model download
@@ -64,7 +69,7 @@ docs/                 the docs system above
 
 ## Rules
 
-- **Only `core.py` imports torch or the model.** `catalog.py`, `taxonomy.py` and `cli.py` must stay importable without loading the model, so tests and `--help` stay fast.
+- **Only `core.py` loads the search model, and only `tryon.py` touches `fashn_vton` (lazily).** `catalog.py`, `taxonomy.py` and `cli.py` must stay importable without loading any model, so tests and `--help` stay fast. Try-on is optional, so everything must still work when it isn't installed.
 - **Fast tests must not download anything.** Anything that needs the model or a dataset gets `@pytest.mark.slow`.
 - **Never commit** `data/`, `artifacts/`, `.venv/`, model weights or secrets. The shirt photos come from third-party marketplace listings, so they are not ours to publish (ADR-004).
 - **Don't change `legacy/`** except to fix links. It's a historical record.
