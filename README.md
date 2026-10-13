@@ -22,6 +22,7 @@ This is the 2026 rebuild of a 2025 Fashion-MNIST classifier, which is kept in
 | **Tag browser** | Filter the catalogue by any combination of tags |
 | **Evaluation** | Old MLP vs new model, see [reports/results.md](reports/results.md) |
 | **Virtual try-on** | Put any catalogue item on a photo of a person (FASHN VTON v1.5, optional) |
+| **Mirror web app** | React frontend + FastAPI backend: your photo in a mirror, the wardrobe beside it |
 
 ## Old vs new: the short version
 
@@ -49,10 +50,14 @@ Put your clothing photos in `data/shirts/` (see [data/README.md](data/README.md)
 
 ```bash
 .venv/Scripts/fashion-search index
-.venv/Scripts/fashion-search app
+npm --prefix web ci
+npm --prefix web run build
+.venv/Scripts/fashion-search serve
 ```
 
-Then open http://localhost:7860.
+Then open http://127.0.0.1:8000. For frontend development, run `npm --prefix web run dev`
+alongside `serve` and open http://localhost:5173. The old Gradio developer UI is still
+available with `fashion-search app` (port 7860).
 
 **Optional: virtual try-on.** This needs an NVIDIA GPU with about 8 GB of VRAM and downloads about 2 GB.
 
@@ -68,7 +73,8 @@ non-commercial use only (see [ADR-007](docs/DECISIONS.md)). On Linux or macOS, u
 ## Project layout
 
 ```
-src/fashion_search/   package: core (model), catalog (search), indexing, app, evaluate, cli
+src/fashion_search/   package: core (model), catalog (search), api (FastAPI), jobs, tryon, indexing, app (Gradio), evaluate, cli
+web/                  React + TypeScript frontend (Vite)
 tests/                pytest (fast by default; `-m slow` loads the real model)
 docs/                 ARCHITECTURE, DECISIONS (ADRs), PROGRESS (status + handoff log)
 reports/              evaluation results

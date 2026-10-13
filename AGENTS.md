@@ -10,7 +10,8 @@ this file, so keep the shared rules here and put tool-specific notes in that too
 clothing photos with **Marqo-FashionSigLIP**, a fashion-specific vision-language
 model, and auto-tags each one by category, colour, pattern, sleeve and style. It
 then serves text search, image search, tag browsing and optional virtual try-on
-(FASHN VTON v1.5) in a Gradio UI. It replaces the 2025 Fashion-MNIST MLP in `legacy/`.
+(FASHN VTON v1.5) through a FastAPI backend and a React "Mirror" web app (`web/`). There's
+also a Gradio developer UI. It replaces the 2025 Fashion-MNIST MLP in `legacy/`.
 
 ## The docs system: read first, update last
 
@@ -39,7 +40,9 @@ python -m venv .venv
 
 # daily
 .venv/Scripts/fashion-search index      # embed + tag data/shirts -> artifacts/index
-.venv/Scripts/fashion-search app        # Gradio UI on http://localhost:7860
+.venv/Scripts/fashion-search serve      # web app + API on http://127.0.0.1:8000 (needs web/dist)
+npm --prefix web run dev                # frontend dev server on :5173 (proxies to :8000)
+.venv/Scripts/fashion-search app        # Gradio developer UI on http://localhost:7860
 .venv/Scripts/fashion-search evaluate   # writes reports/results.md (~3 min on GPU)
 
 # optional virtual try-on (~2 GB weights, ~8 GB VRAM)
@@ -51,6 +54,7 @@ python -m venv .venv
 .venv/Scripts/ruff check . && .venv/Scripts/ruff format --check .
 .venv/Scripts/pytest                    # fast tests, no model download
 .venv/Scripts/pytest -m slow            # also loads the real model (~800 MB first time)
+npm --prefix web run lint && npm --prefix web run typecheck && npm --prefix web test
 ```
 
 On Linux or macOS, replace `.venv/Scripts/` with `.venv/bin/`.
@@ -59,6 +63,7 @@ On Linux or macOS, replace `.venv/Scripts/` with `.venv/bin/`.
 
 ```
 src/fashion_search/   the package (see docs/ARCHITECTURE.md for each module)
+web/                  React + TypeScript frontend (Vite); web/src/lib/api.ts mirrors api.py's models
 tests/                pytest; fast tests use fake embeddings, slow tests use the real model
 data/                 local data, git-ignored (see data/README.md for how to get it)
 artifacts/index/      generated embeddings + tags, git-ignored, rebuilt by `fashion-search index`
@@ -70,6 +75,7 @@ docs/                 the docs system above
 ## Rules
 
 - **Only `core.py` loads the search model, and only `tryon.py` touches `fashn_vton` (lazily).** `catalog.py`, `taxonomy.py` and `cli.py` must stay importable without loading any model, so tests and `--help` stay fast. Try-on is optional, so everything must still work when it isn't installed.
+- **API changes go in both places:** update the pydantic models in `api.py` and the types in `web/src/lib/api.ts` in the same commit, and add an API test.
 - **Fast tests must not download anything.** Anything that needs the model or a dataset gets `@pytest.mark.slow`.
 - **Never commit** `data/`, `artifacts/`, `.venv/`, model weights or secrets. The shirt photos come from third-party marketplace listings, so they are not ours to publish (ADR-004).
 - **Don't change `legacy/`** except to fix links. It's a historical record.

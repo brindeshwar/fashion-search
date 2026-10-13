@@ -1,4 +1,4 @@
-"""Command-line entry point: ``fashion-search {index,app,evaluate,tryon,tryon-download}``."""
+"""Command-line entry point: ``fashion-search {index,serve,app,evaluate,tryon,tryon-download}``."""
 
 import argparse
 from pathlib import Path
@@ -16,7 +16,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_index.add_argument("--data-dir", type=Path, default=DATA_DIR)
     p_index.add_argument("--index-dir", type=Path, default=INDEX_DIR)
 
-    p_app = sub.add_parser("app", help="Launch the Gradio web UI")
+    p_serve = sub.add_parser("serve", help="Run the web app (FastAPI + React) on :8000")
+    p_serve.add_argument("--data-dir", type=Path, default=DATA_DIR)
+    p_serve.add_argument("--index-dir", type=Path, default=INDEX_DIR)
+    p_serve.add_argument("--host", default="127.0.0.1")
+    p_serve.add_argument("--port", type=int, default=8000)
+
+    p_app = sub.add_parser("app", help="Launch the Gradio developer UI on :7860")
     p_app.add_argument("--data-dir", type=Path, default=DATA_DIR)
     p_app.add_argument("--index-dir", type=Path, default=INDEX_DIR)
     p_app.add_argument("--port", type=int, default=7860)
@@ -43,6 +49,11 @@ def main(argv: list[str] | None = None) -> None:
         from .indexing import build_index
 
         build_index(args.data_dir, args.index_dir)
+    elif args.command == "serve":
+        from .api import serve
+        from .catalog import Catalog
+
+        serve(Catalog.load(args.index_dir, args.data_dir), host=args.host, port=args.port)
     elif args.command == "app":
         from .app import launch
         from .catalog import Catalog
