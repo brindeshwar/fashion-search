@@ -5,6 +5,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-13
+
+### Added
+- Virtual try-on with FASHN VTON v1.5 (optional `[tryon]` extra): a new app tab that takes a person photo plus a garment found by search or uploaded.
+- `fashion-search tryon` and `fashion-search tryon-download` commands.
+
 ## [0.1.0] - 2026-10-13
 
 ### Added

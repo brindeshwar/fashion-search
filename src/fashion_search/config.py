@@ -15,5 +15,8 @@ DATA_DIR = _path("FASHION_DATA_DIR", REPO_ROOT / "data" / "shirts")
 FASHION_MNIST_DIR = _path("FASHION_MNIST_DIR", REPO_ROOT / "data" / "fashion_mnist")
 INDEX_DIR = _path("FASHION_INDEX_DIR", REPO_ROOT / "artifacts" / "index")
 REPORTS_DIR = _path("FASHION_REPORTS_DIR", REPO_ROOT / "reports")
+TRYON_WEIGHTS_DIR = _path(
+    "FASHION_TRYON_WEIGHTS_DIR", REPO_ROOT / "artifacts" / "weights" / "fashn-vton-1.5"
+)
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}

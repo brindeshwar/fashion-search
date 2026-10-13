@@ -5,18 +5,16 @@ Update both at the end (see `AGENTS.md` → Session protocol).
 
 ## Status
 
-**Version:** 0.1.0 · **Milestone:** v0.2 virtual try-on · **Health:** green (search app works, tests pass)
+**Version:** 0.2.0 (branch `feat/virtual-try-on`, not merged) · **Milestone:** v0.2 virtual try-on · **Health:** amber (try-on code done, not yet run on real weights)
 
 ## Task board
 
-### Now
-- _(nothing in progress)_
-
-### Next: v0.2 virtual try-on
-- [ ] Check that FASHN VTON v1.5 fits in 8 GB VRAM at fp16 (official repo and model card; confirm the licence is Apache-2.0)
-- [ ] `src/fashion_search/tryon.py`: lazy model load, `try_on(person_img, garment_img) -> PIL.Image`
-- [ ] Replace the placeholder "Virtual try-on" tab: upload a person photo, pick a garment from search results, show the output
-- [ ] Slow test for try-on and an ADR for the model choice
+### Now: v0.2 virtual try-on (branch `feat/virtual-try-on`)
+- [x] Research: FASHN VTON v1.5 needs ~8 GB VRAM in bf16. The model is Apache-2.0, but the human parser is non-commercial (ADR-007)
+- [x] `tryon.py`, app tab (search → pick garment → try on), `tryon` and `tryon-download` commands, tests with a fake pipeline, docs
+- [ ] **Blocked on the user:** run `pip install -e ".[tryon]"` (auto mode blocked installing code from GitHub), then `fashion-search tryon-download`
+- [ ] Run a real try-on on the RTX 4060: check VRAM and speed, and look at the output quality on a few shirts
+- [ ] `pytest -m slow`, then open a PR and merge to main, tag v0.2.0
 
 ### Later
 - [ ] Tag accuracy check: hand-label about 50 photos and report per-attribute accuracy in `reports/`
@@ -29,7 +27,7 @@ Update both at the end (see `AGENTS.md` → Session protocol).
 - [x] Professional repo setup: package, CLI, tests, CI, docs system, templates
 
 ## Known issues
-- The "Virtual try-on" tab is a placeholder.
+- Try-on hasn't been run on real weights yet: VRAM fit on 8 GB and quality are unverified.
 - The tags are zero-shot and not yet measured against hand labels. Spot checks look good, but bright colours on multi-colour prints are sometimes tagged "multicolored".
 - `evaluate.py` takes about 3 min and downloads Fashion-MNIST (~30 MB) on first run.
 
@@ -41,6 +39,13 @@ Newest first. Template:
 **Next:** ...
 **Watch out:** ...
 ```
+
+### 2026-10-13 · Claude Code (Opus 5.5): v0.2 try-on
+**Did:** researched current try-on models and chose FASHN VTON v1.5 (ADR-007; documented the non-commercial human-parser licence). Added `tryon.py`, the app tab, the CLI commands, a `[tryon]` extra pinned to commit 7c0f10a, and 9 new tests (27 fast tests pass). The app shows setup instructions when try-on isn't installed (checked in the browser).
+
+**Next:** the user installs the extra. Then download the weights, run a real try-on and check VRAM, run the slow tests, open a PR and tag v0.2.0.
+
+**Watch out:** auto mode refuses `pip install git+https://...`, so the user must run or approve it. VRAM is tight on 8 GB: if it runs out of memory, try `--steps 20`, or free the FashionSigLIP model first.
 
 ### 2026-10-13 · Claude Code (Opus 5.5)
 **Did:**
