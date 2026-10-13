@@ -27,6 +27,8 @@ dependencies = [
 # Pinned to a commit: FASHN VTON is not on PyPI. Human parser is non-commercial (ADR-007).
 tryon = [
     "fashn-vton @ git+https://github.com/fashn-AI/fashn-vton-1.5@7c0f10af3f91ad4048fe9729c470a13ef905d25a",
+    # 1.27+ is built for CUDA 13; torch here uses CUDA 12.x, whose DLLs ORT 1.26 reuses.
+    "onnxruntime-gpu>=1.20,<1.27",
 ]
 dev = ["pytest>=8", "ruff==0.17.0", "pre-commit>=3.7"]
 

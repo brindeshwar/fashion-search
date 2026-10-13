@@ -14,10 +14,16 @@ Update both at the end (see `AGENTS.md` → Session protocol).
 - [x] `tryon.py`, app tab (search → pick garment → try on), `tryon` and `tryon-download` commands, tests with a fake pipeline, docs
 - [x] Install the extra and download the weights (2.2 GB); real try-on on the RTX 4060: ~49 s/image at 30 steps, 4.4 GB peak torch VRAM, pipeline load 8.4 s
 - [x] Settings ablation on 6 garments: `garment_photo_type="model"` beats "flat-lay" on our hanger/listing photos (flat-lay made long-sleeve shirts sleeveless and copied listing text/background). Default changed to "model"
-- [ ] `pytest -m slow`, push the branch, open a PR, merge, tag v0.2.0 (ask the user before pushing)
-- [ ] Optional: add a CHANGELOG/ADR note on the "model" default; consider background removal for busy listing photos
+- [x] Fixed pose detection on CPU (pinned onnxruntime-gpu <1.27, ADR-008); `pytest -m slow` passes (2/2)
+- [x] CHANGELOG and ADR-008 for the "model" default
+- [ ] Push, PR, merge, tag v0.2.0 (user approved on 2026-10-13)
+
+### Next: v0.3 full-stack web app
+- [ ] The user picks one of 5 design directions (editorial, studio, masonry, minimal command bar, virtual mirror)
+- [ ] React frontend + API backend (stack in a new ADR), replacing Gradio as the main UI
 
 ### Later
+- [ ] Background removal or cropping for busy listing photos before try-on
 - [ ] Tag accuracy check: hand-label about 50 photos and report per-attribute accuracy in `reports/`
 - [ ] Combined search (text query + tag filters together)
 - [ ] Larger catalogue: a properly licensed dataset (e.g. DeepFashion or Fashionpedia, licence permitting)
