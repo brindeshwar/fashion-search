@@ -54,10 +54,25 @@ def test_low_vram_warning(monkeypatch, free_gb, warns):
 
     monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
     monkeypatch.setattr(torch.cuda, "mem_get_info", lambda: (free_gb * 2**30, 8 * 2**30))
+    tryon.load_pipeline.cache_clear()
     warning = tryon.low_vram_warning()
     assert (warning is not None) == warns
     if warns:
         assert "1.0 GB" in warning
+
+
+def test_no_vram_warning_once_our_pipeline_is_loaded(monkeypatch):
+    import torch
+
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(torch.cuda, "mem_get_info", lambda: (0.2 * 2**30, 8 * 2**30))
+    monkeypatch.setattr(tryon, "load_pipeline", type("Fake", (), {"cache_info": lambda: _Info(1)}))
+    assert tryon.low_vram_warning() is None
+
+
+class _Info:
+    def __init__(self, currsize):
+        self.currsize = currsize
 
 
 def test_app_shows_setup_hint_when_tryon_unavailable(monkeypatch, catalog):

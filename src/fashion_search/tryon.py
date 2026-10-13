@@ -74,6 +74,8 @@ def low_vram_warning(min_free_gb: float = MIN_FREE_VRAM_GB) -> str | None:
 
     if not torch.cuda.is_available():
         return "No CUDA GPU found: try-on will run on CPU and take many minutes."
+    if load_pipeline.cache_info().currsize:
+        return None  # the memory in use is our own loaded pipeline, not a competitor
     free, _ = torch.cuda.mem_get_info()
     if free / 2**30 < min_free_gb:
         return (

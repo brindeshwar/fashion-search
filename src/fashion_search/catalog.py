@@ -54,3 +54,18 @@ class Catalog:
             if value and value != "any":
                 mask &= (self.table[attr] == value).to_numpy()
         return np.flatnonzero(mask)
+
+    def search(
+        self, query_emb: np.ndarray | None = None, k: int = 50, **tags: str
+    ) -> list[tuple[int, float | None]]:
+        """Filter by tags, then rank by similarity to the query (catalogue order if no query)."""
+        idx = self.filter(**tags)
+        if query_emb is None:
+            return [(int(i), None) for i in idx[:k]]
+        scores = self.embeddings[idx] @ query_emb
+        order = np.argsort(-scores)[:k]
+        return [(int(idx[o]), float(scores[o])) for o in order]
+
+    def tag_values(self) -> dict[str, list[str]]:
+        """Tag values that actually occur in the catalogue, per attribute."""
+        return {attr: sorted(self.table[attr].unique()) for attr in ATTRIBUTES}
