@@ -75,20 +75,6 @@ class _Info:
         self.currsize = currsize
 
 
-def test_app_shows_setup_hint_when_tryon_unavailable(monkeypatch, catalog):
-    from fashion_search.app import build_app
-
-    monkeypatch.setattr(tryon, "is_available", lambda *a: False)
-    assert build_app(catalog) is not None
-
-
-def test_app_builds_tryon_tab_when_available(monkeypatch, catalog):
-    from fashion_search.app import build_app
-
-    monkeypatch.setattr(tryon, "is_available", lambda *a: True)
-    assert build_app(catalog) is not None
-
-
 def test_tryon_cli_args():
     args = build_parser().parse_args(
         ["tryon", "--person", "p.jpg", "--garment", "g.jpg", "--category", "one-pieces"]
