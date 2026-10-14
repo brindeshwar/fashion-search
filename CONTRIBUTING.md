@@ -1,39 +1,21 @@
 # Contributing
 
-## Setup
+Thanks for helping. The short version:
 
-Follow the Quickstart in [README.md](README.md), then run:
+1. **Open or pick an issue** using the bug or feature template.
+2. **Set up** following [docs/SETUP.md](docs/SETUP.md) and
+   [docs/DEVELOPMENT.md → Dev setup](docs/DEVELOPMENT.md#dev-setup).
+3. **Branch from `main`:** `feat/…`, `fix/…`, `docs/…` or `chore/…`.
+4. **Make the change with tests.** New logic needs a fast test. Anything that loads a model
+   gets `@pytest.mark.slow`.
+5. **Run all the checks** listed in [DEVELOPMENT.md → Checks](docs/DEVELOPMENT.md#checks).
+   CI runs the same ones.
+6. **Update the docs** your change affects:
+   - `CHANGELOG.md` under _Unreleased_, for anything a user would notice
+   - `docs/API.md` and `web/src/lib/api.ts` when the API changes
+   - `docs/ARCHITECTURE.md` when modules or file formats change
+   - `docs/DECISIONS.md` (a new ADR) when you choose between real alternatives
+7. **Commit** with [Conventional Commits](https://www.conventionalcommits.org/) and **open a
+   PR**. Fill in the template; CI must pass before merging.
 
-```bash
-.venv/Scripts/pre-commit install
-```
-
-## Workflow
-
-1. **Pick or create an issue.** Use the bug or feature template. For agents, the task board in `docs/PROGRESS.md` is the source of truth.
-2. **Branch from `main`:** `feat/<short-name>`, `fix/<short-name>`, `docs/<short-name>`.
-3. **Make the change, with tests.** New logic needs a fast test. Anything that needs the model gets `@pytest.mark.slow`.
-4. **Check locally:**
-   ```bash
-   .venv/Scripts/ruff check . && .venv/Scripts/ruff format --check .
-   .venv/Scripts/pytest
-   ```
-5. **Update the docs:**
-   - `CHANGELOG.md` under _Unreleased_, if users would notice the change
-   - `docs/ARCHITECTURE.md` if modules or file formats changed
-   - `docs/DECISIONS.md` if you chose between real alternatives
-   - `docs/PROGRESS.md`: the task board and a handoff entry
-6. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/): `feat: add try-on tab`, `fix: normalise validation set`.
-7. **Open a PR** and fill in the template. CI must pass before merge. Squash-merge into `main`.
-
-## Releases
-
-1. Move the _Unreleased_ entries in `CHANGELOG.md` to a new version heading.
-2. Bump `version` in `pyproject.toml` and `src/fashion_search/__init__.py`.
-3. Tag the release: `git tag v0.X.0 && git push --tags`.
-
-## Code style
-
-ruff handles lint and formatting (line length 100). Use type hints on public functions
-and short docstrings. Comments explain *why*, not *what*. Keep torch imports inside
-`core.py` (see `AGENTS.md` → Rules).
+Code style, testing approach and the release process are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
