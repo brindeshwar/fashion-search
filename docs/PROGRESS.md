@@ -15,6 +15,7 @@ end to end on the RTX 4060; all checks pass.
 - _(nothing in progress)_
 
 ### Next (ideas, ranked)
+- [ ] **Screenshot of a finished try-on** (before/after view) for the README and user guide. It was skipped for v1.0.0 because the GPU was busy with another job.
 - [ ] **Cleaner garments before try-on:** remove the background and crop busy listing photos (text, props, beds). This is the biggest quality gap; see the user guide's limitations.
 - [ ] **Bring your own wardrobe:** upload and delete garments from the web app, with incremental indexing.
 - [ ] **Persist looks and jobs** (SQLite) so they survive a server restart.
@@ -44,3 +45,10 @@ Newest first. Older entries: [`history/handoffs-2026-10.md`](history/handoffs-20
 **Next:** ...
 **Watch out:** ...
 ```
+
+### 2026-10-15 · Claude Code (Opus 5.5): v1.0.0 cleanup
+**Did:** merged Dependabot #1, #6 and #8 and closed #7 (Node 24 types; Dependabot now ignores major `@types/node`). Removed the Gradio UI (ADR-010). Wrote USER_GUIDE, SETUP, API and DEVELOPMENT, plus a docs index; rewrote README and CONTRIBUTING; added docstrings everywhere (they also feed `/docs`). Archived old handoffs. Moved the repo from `D:\PE_project` to `D:\Projects\fashion-search` and rebuilt `.venv` and the pre-commit hook there. All checks pass: 41 pytest, 13 Vitest, ruff, oxlint, tsc, build, and links.
+
+**Next:** the user merges the v1.0.0 PR, then tag v1.0.0. A finished-try-on screenshot is still missing (the GPU was busy).
+
+**Watch out:** the user runs long GPU benchmarks (`medsignal`, via Ollama) on this machine; try-on crawls while they run. The empty `D:\PE_project` folder is left for the user to delete (the tools refuse to remove the session's original folder).

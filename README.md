@@ -8,7 +8,7 @@
 Search a wardrobe of clothing photos by **words**, **photo** or **tags**, then **see any piece
 on yourself** with virtual try-on. Everything runs locally on your own GPU.
 
-![Mirror: your photo on the left, the searchable wardrobe on the right](docs/images/mirror-tryon.jpg)
+![Mirror: your photo on the left, fitting a red plaid flannel found by searching the wardrobe on the right](docs/images/mirror-fitting.jpg)
 
 <sub>Catalogue photos are blurred in screenshots because they come from third-party listings (ADR-004). The person is FASHN's sample model photo.</sub>
 

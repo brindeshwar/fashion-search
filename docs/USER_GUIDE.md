@@ -9,7 +9,7 @@ person. This guide assumes the app is installed and running (see [SETUP.md](SETU
 
 Then open **http://127.0.0.1:8000**.
 
-![The Mirror app: your photo on the left, the wardrobe on the right](images/mirror-tryon.jpg)
+![The Mirror app: your photo on the left, the wardrobe on the right](images/mirror-empty.jpg)
 
 ## The screen
 
@@ -53,6 +53,8 @@ occasional one will be wrong.
 Click a garment (it gets a check mark and appears in the fit bar), then click **Try it on**.
 If the button is disabled, the hint underneath says why ("Add your photo first", "Pick a
 garment from the wardrobe", or "Try-on is not set up on the server").
+
+![A try-on in progress: the selected flannel in the fit bar, progress in the mirror](images/mirror-fitting.jpg)
 
 While it works, the mirror shows a progress bar and an estimate such as "about 40 s left".
 A try-on takes **about 50 seconds** on an 8 GB laptop GPU, plus about 10 seconds the first
