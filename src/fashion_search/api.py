@@ -30,6 +30,8 @@ WEB_DIST = REPO_ROOT / "web" / "dist"
 
 
 class Item(BaseModel):
+    """One garment in the catalogue, as returned by the search endpoints."""
+
     id: int
     image_url: str
     tags: dict[str, str]
@@ -38,11 +40,15 @@ class Item(BaseModel):
 
 
 class ItemList(BaseModel):
+    """A page of search results plus how many items match the filters."""
+
     items: list[Item]
     total: int
 
 
 class TryOnJob(BaseModel):
+    """State of a background try-on job; poll until `status` is done or error."""
+
     id: str
     status: Literal["queued", "running", "done", "error"]
     queue_position: int
@@ -53,6 +59,8 @@ class TryOnJob(BaseModel):
 
 
 class Health(BaseModel):
+    """Server status shown in the app's status pill."""
+
     version: str
     items: int
     tryon_available: bool
@@ -93,6 +101,7 @@ def create_api(
     app = FastAPI(title="Fashion Search API", version=__version__)
 
     def item(i: int, score: float | None = None) -> Item:
+        """Build the API view of catalogue row `i`."""
         row = catalog.table.iloc[i]
         return Item(
             id=i,
@@ -103,6 +112,7 @@ def create_api(
         )
 
     def job_view(job) -> TryOnJob:
+        """Build the API view of a job, with timing and queue position."""
         end = job.finished or time.time()
         expected = float(np.median(durations)) if durations else DEFAULT_TRYON_SECONDS
         return TryOnJob(
@@ -117,6 +127,7 @@ def create_api(
 
     @app.get("/api/health", response_model=Health)
     def health():
+        """Item count, try-on availability, and any GPU memory warning."""
         available = tryon.is_available()
         return Health(
             version=__version__,
@@ -128,6 +139,7 @@ def create_api(
 
     @app.get("/api/tags", response_model=dict[str, list[str]])
     def tags():
+        """Tag values that occur in the catalogue, per attribute (for filter menus)."""
         return catalog.tag_values()
 
     @app.get("/api/items", response_model=ItemList)
@@ -140,6 +152,7 @@ def create_api(
         sleeve: str | None = None,
         style: str | None = None,
     ):
+        """Search the catalogue: optional text query ranked by similarity, plus tag filters."""
         filters = dict(category=category, color=color, pattern=pattern, sleeve=sleeve, style=style)
         query = embed_text(q.strip()) if q.strip() else None
         total = len(catalog.filter(**filters))
@@ -148,11 +161,13 @@ def create_api(
 
     @app.post("/api/items/search-by-image", response_model=ItemList)
     def search_by_image(image: UploadFile, limit: Annotated[int, Query(ge=1, le=200)] = 48):
+        """Find the catalogue items most similar to an uploaded photo."""
         hits = catalog.top_k(embed_image(_read_image(image)), limit)
         return ItemList(items=[item(i, s) for i, s in hits], total=len(catalog))
 
     @app.get("/api/items/{item_id}", response_model=Item)
     def get_item(item_id: int):
+        """A single catalogue item by id."""
         if not 0 <= item_id < len(catalog):
             raise HTTPException(404, "No such item.")
         return item(item_id)
@@ -160,6 +175,7 @@ def create_api(
     @app.get("/images/{filename}")
     def image(filename: str):
         # Only serve files that are in the catalogue: blocks path traversal.
+        """Serve a catalogue photo. Only files in the catalogue are served."""
         if filename not in files:
             raise HTTPException(404, "No such image.")
         cache = {"Cache-Control": "max-age=86400"}
@@ -175,6 +191,7 @@ def create_api(
         steps: Annotated[int, Form(ge=10, le=50)] = 30,
         seed: Annotated[int, Form()] = 42,
     ):
+        """Start a try-on job (202). Poll `GET /api/tryon/{id}` for progress."""
         if not tryon.is_available():
             raise HTTPException(503, tryon.INSTALL_HINT)
         person_img = _read_image(person)
@@ -188,6 +205,7 @@ def create_api(
             raise HTTPException(422, "Choose a garment from the catalogue or upload one.")
 
         def run() -> bytes:
+            """Run the try-on on the job worker; returns PNG bytes."""
             t0 = time.time()
             out = tryon.try_on(
                 person_img, garment_img, category or "tops", garment_photo_type, steps, seed
@@ -201,6 +219,7 @@ def create_api(
 
     @app.get("/api/tryon/{job_id}", response_model=TryOnJob)
     def tryon_status(job_id: str):
+        """Current state of a try-on job."""
         job = jobs.get(job_id)
         if job is None:
             raise HTTPException(404, "No such try-on job.")
@@ -208,6 +227,7 @@ def create_api(
 
     @app.get("/api/tryon/{job_id}/result")
     def tryon_result(job_id: str):
+        """The finished try-on image as PNG (404 until the job is done)."""
         job = jobs.get(job_id)
         if job is None or job.status != "done":
             raise HTTPException(404, "Result isn't ready.")
@@ -219,6 +239,7 @@ def create_api(
 
 
 def serve(catalog: Catalog, host: str = "127.0.0.1", port: int = 8000) -> None:
+    """Run the API and the built web app with uvicorn."""
     import uvicorn
 
     uvicorn.run(create_api(catalog), host=host, port=port)

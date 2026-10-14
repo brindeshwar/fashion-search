@@ -1,6 +1,6 @@
 # Architecture
 
-_Last updated: 2026-10-13 (v0.3.0)_
+_Last updated: 2026-10-15 (v1.0.0)_
 
 ## Overview
 
@@ -9,10 +9,11 @@ _Last updated: 2026-10-13 (v0.3.0)_
                          │  core.embed_images        ├─ embeddings.npy  (N×768 float32, L2-normalised)
                          │  core.tag_images          └─ catalog.csv     (file + 5 tags + 5 confidences)
                          ▼
-                   Catalog.load ──► app.build_app (Gradio)
-                                      ├─ text query  ─► core.embed_texts  ─► Catalog.top_k
-                                      ├─ image query ─► core.embed_images ─► Catalog.top_k
-                                      └─ tag filters ─────────────────────► Catalog.filter
+                   Catalog.load ──► api.create_api (FastAPI) ◄──HTTP── web/ (React)
+                                      ├─ text query  ─► core.embed_texts  ─┐
+                                      ├─ tag filters ──────────────────────┴► Catalog.search
+                                      ├─ image query ─► core.embed_images ──► Catalog.top_k
+                                      └─ try-on      ─► jobs.JobQueue ─► tryon.try_on (optional)
 ```
 
 Everything is one embedding space. Images and text prompts are both encoded by
@@ -28,12 +29,11 @@ softmax over dot products with the prompts for each attribute. No training happe
 | `core.py` | Loads the model (cached, one per process), `embed_images`, `embed_texts`, `softmax_scores`, `zero_shot`, `tag_images` | **yes** (the only module that does) |
 | `catalog.py` | `Catalog` dataclass: load/save the index, `top_k`, `filter`, `search` (filter then rank), `tag_values`, `path` | no |
 | `indexing.py` | `build_index(data_dir, index_dir)`: embeds, tags and saves | via core |
-| `app.py` | `build_app(catalog)` builds the Gradio Blocks; `launch()` serves it. Imports core lazily inside `build_app` | lazily |
 | `evaluate.py` | Old MLP vs zero-shot comparison; writes `reports/results.md` | yes |
 | `tryon.py` | Optional FASHN VTON v1.5 wrapper: `is_available`, `download_weights`, `load_pipeline` (cached, lazy), `try_on`, `fashn_category` | lazily (via `fashn_vton`) |
 | `jobs.py` | `JobQueue`: one worker thread, in-memory jobs (queued, running, done or error), queue position | no |
 | `api.py` | FastAPI app (`create_api`) for the React UI: items (text + tags combined), image search, images, try-on jobs; also serves `web/dist` | lazily (embed functions are injectable for tests) |
-| `cli.py` | `fashion-search {index,serve,app,evaluate,tryon,tryon-download}`; heavy imports are deferred | no |
+| `cli.py` | `fashion-search {index,serve,evaluate,tryon,tryon-download}`; heavy imports are deferred | no |
 
 ## Invariants
 
@@ -55,11 +55,11 @@ softmax over dot products with the prompts for each attribute. No training happe
  person photo ─┐
                ├─► tryon.try_on ─► fashn_vton.TryOnPipeline ─► result image
  garment ──────┘     (category: tops | bottoms | one-pieces, garment photo: flat-lay | model)
-   └─ picked from catalogue search (app tab) or uploaded / --garment (CLI)
+   └─ a catalogue item or an upload (POST /api/tryon), or a file (`fashion-search tryon`)
 ```
 
 - Installed with the `[tryon]` extra, which pins `fashn-vton` to a git commit. Weights (~2 GB) go to `artifacts/weights/fashn-vton-1.5/` via `fashion-search tryon-download`. The human parser goes to the Hugging Face cache.
-- **Invariant:** nothing imports `fashn_vton` unless try-on is actually used. `app.build_tryon_tab` checks `tryon.is_available()` and shows setup instructions otherwise, so the base install, the fast tests and CI never need it.
+- **Invariant:** nothing imports `fashn_vton` unless try-on is actually used. The API checks `tryon.is_available()`: `/api/health` reports it, and `POST /api/tryon` returns 503 with setup instructions when it's missing, so the base install, the fast tests and CI never need it.
 - `fashn_category()` maps our taxonomy to FASHN's categories (`dress` → `one-pieces`, everything else → `tops`).
 - VRAM: about 8 GB for 768×1024 output in bf16 (RTX 30/40). FashionSigLIP adds about 0.8 GB if both are loaded.
 
@@ -80,3 +80,15 @@ softmax over dot products with the prompts for each attribute. No training happe
 - **Dev loop:** `fashion-search serve` (API on :8000) plus `npm --prefix web run dev` (Vite on :5173, which proxies `/api` and `/images` to :8000).
 - **Progress:** the server reports `elapsed_seconds` and `expected_seconds` (median of past runs, default 55 s). The client interpolates between polls and caps the bar at 97% until the job is done.
 - **Security:** `/images/{file}` serves only filenames that are in the catalogue (no path traversal). Uploads are capped at 15 MB and must decode as images. There's no auth, so the server binds to 127.0.0.1.
+
+## Repository layout
+
+```
+src/fashion_search/   Python package (modules above)
+web/                  React frontend: src/{App.tsx, components/, hooks/, lib/}, built to web/dist/
+tests/                pytest: conftest (fake catalogue), test_api, test_catalog, test_cli, test_core, test_tryon
+docs/                 guides, ADRs, progress; history/ (old handoffs), images/ (screenshots)
+reports/              generated evaluation output (results.md)
+legacy/               the original 2025 notebook (read-only)
+data/  artifacts/     local, git-ignored: photos, Fashion-MNIST, index, try-on weights
+```

@@ -5,6 +5,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-15
+
+### Removed
+- **BREAKING:** the Gradio developer UI and the `fashion-search app` command. Use `fashion-search serve` (the Mirror web app). See ADR-010.
+
+### Added
+- Documentation set: `docs/USER_GUIDE.md`, `docs/SETUP.md`, `docs/API.md`, `docs/DEVELOPMENT.md` and a `docs/README.md` index; a rewritten README with screenshots.
+
+### Changed
+- Dependencies: TypeScript 7, `actions/checkout` v7, `actions/setup-python` v7, `actions/setup-node` v7. Dependabot ignores major `@types/node` updates so types track the Node 24 runtime.
+- Older handoff entries moved from `docs/PROGRESS.md` to `docs/history/`.
+
 ## [0.3.0] - 2026-10-13
 
 ### Added

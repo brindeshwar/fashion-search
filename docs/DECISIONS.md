@@ -19,7 +19,7 @@ and mark the old one `Superseded`. Format: context → decision → consequences
 - **Consequences:** zero extra dependencies and millisecond queries. Revisit (FAISS or a vector DB) once the catalogue passes about 100k items.
 
 ## ADR-003: Gradio for the UI
-- **Date:** 2026-10-13 · **Status:** Accepted
+- **Date:** 2026-10-13 · **Status:** Superseded by ADR-010
 - **Context:** we need image upload, a gallery and tabs quickly, in Python, on a local GPU.
 - **Alternatives:** Streamlit (weaker galleries); FastAPI + React (much more code).
 - **Decision:** Gradio Blocks, built by `build_app(catalog)` so it can be tested without the model.
@@ -64,3 +64,9 @@ and mark the old one `Superseded`. Format: context → decision → consequences
   - **React 19 + Vite + TypeScript**, plain CSS with design tokens (no UI kit), lucide icons, Vitest and Testing Library. oxlint comes from the Vite template.
   - Gradio stays as a developer tool (`fashion-search app`).
 - **Consequences:** two toolchains (Python and Node) and a CI job each. Jobs are lost on restart, which is fine locally; a deployment would need a persistent queue. The API has no auth, so it binds to 127.0.0.1 by default.
+
+## ADR-010: Remove the Gradio UI
+- **Date:** 2026-10-15 · **Status:** Accepted · **Supersedes:** ADR-003
+- **Context:** Since v0.3 the React Mirror app (ADR-009) does everything the Gradio UI did (text and image search, tag filters, try-on) and more. Keeping both meant two UIs to maintain, about 30 extra dependencies, and docs that pointed people at two different ports.
+- **Decision:** delete `app.py`, the `fashion-search app` command and the `gradio` dependency. `fashion-search serve` is the only UI.
+- **Consequences:** smaller install and one UI to maintain. The interactive OpenAPI page at `/docs` (FastAPI) is the developer tool for poking the backend.

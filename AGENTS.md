@@ -10,8 +10,8 @@ this file, so keep the shared rules here and put tool-specific notes in that too
 clothing photos with **Marqo-FashionSigLIP**, a fashion-specific vision-language
 model, and auto-tags each one by category, colour, pattern, sleeve and style. It
 then serves text search, image search, tag browsing and optional virtual try-on
-(FASHN VTON v1.5) through a FastAPI backend and a React "Mirror" web app (`web/`). There's
-also a Gradio developer UI. It replaces the 2025 Fashion-MNIST MLP in `legacy/`.
+(FASHN VTON v1.5) through a FastAPI backend and a React "Mirror" web app (`web/`).
+It replaces the 2025 Fashion-MNIST MLP in `legacy/`.
 
 ## The docs system: read first, update last
 
@@ -21,6 +21,10 @@ also a Gradio developer UI. It replaces the 2025 Fashion-MNIST MLP in `legacy/`.
 | `docs/ARCHITECTURE.md` | Modules, data flow, file formats, invariants | Whenever you add, move or rename a module or change a file format |
 | `docs/DECISIONS.md` | Numbered decision records (ADRs) | Whenever you pick between real alternatives (model, library, layout, data policy) |
 | `CHANGELOG.md` | User-visible changes per version | Any change a user of the app or CLI would notice |
+| `docs/API.md` | REST endpoints | Whenever a route, parameter or response model changes |
+| `docs/USER_GUIDE.md`, `docs/SETUP.md`, `docs/DEVELOPMENT.md` | How to use, install and develop | When the behaviour, setup steps or workflow they describe changes |
+
+`docs/README.md` is the index of all docs. Old handoff entries are archived in `docs/history/`.
 
 **Session protocol**
 1. **Start:** read `docs/PROGRESS.md` (the "Now" section and the last 2 handoff entries). Then read `docs/ARCHITECTURE.md` if you'll touch code.
@@ -37,12 +41,12 @@ python -m venv .venv
 .venv/Scripts/python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 .venv/Scripts/python -m pip install -e ".[dev]"
 .venv/Scripts/pre-commit install
+npm --prefix web ci && npm --prefix web run build
 
 # daily
 .venv/Scripts/fashion-search index      # embed + tag data/shirts -> artifacts/index
 .venv/Scripts/fashion-search serve      # web app + API on http://127.0.0.1:8000 (needs web/dist)
 npm --prefix web run dev                # frontend dev server on :5173 (proxies to :8000)
-.venv/Scripts/fashion-search app        # Gradio developer UI on http://localhost:7860
 .venv/Scripts/fashion-search evaluate   # writes reports/results.md (~3 min on GPU)
 
 # optional virtual try-on (~2 GB weights, ~8 GB VRAM)
@@ -69,7 +73,7 @@ data/                 local data, git-ignored (see data/README.md for how to get
 artifacts/index/      generated embeddings + tags, git-ignored, rebuilt by `fashion-search index`
 reports/              committed evaluation results
 legacy/               the original 2025 notebook; read-only, do not modernise
-docs/                 the docs system above
+docs/                 the docs system above (index: docs/README.md)
 ```
 
 ## Rules
