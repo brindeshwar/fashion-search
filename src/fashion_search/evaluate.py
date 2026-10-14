@@ -47,6 +47,7 @@ SEED = 0
 
 
 def load_shirts():
+    """Split the shirt photos 400/100 (seeded) into baseline-train and held-out test."""
     paths = sorted(DATA_DIR.glob("*.jpg"))
     rng = np.random.default_rng(SEED)
     idx = rng.permutation(len(paths))
@@ -59,6 +60,7 @@ def to_mnist(path):
 
 
 def train_baseline(X_tr, y_tr, X_val, y_val, epochs=40, patience=5):
+    """Train the 2025 MLP with early stopping on validation loss, keeping the best weights."""
     torch.manual_seed(SEED)
     model = nn.Sequential(
         nn.Flatten(),
@@ -97,19 +99,23 @@ def train_baseline(X_tr, y_tr, X_val, y_val, epochs=40, patience=5):
 
 
 def predict_baseline(model, X):
+    """Class predictions from the baseline MLP."""
     with torch.no_grad():
         return model(torch.tensor(X).to(DEVICE)).argmax(1).cpu().numpy()
 
 
 def predict_zero_shot(images):
+    """Zero-shot Fashion-MNIST class predictions from FashionSigLIP."""
     return zero_shot(embed_images(images, batch_size=256), PROMPTS, "a photo of a {}").argmax(1)
 
 
 def upscale(x):
+    """28x28 array -> 224x224 PIL image for the vision model."""
     return Image.fromarray(x).resize((224, 224), Image.BICUBIC)
 
 
 def shirt_scores(pred):
+    """Share predicted as Shirt, and share predicted as any top."""
     return (pred == SHIRT).mean(), np.isin(pred, TOPS).mean()
 
 

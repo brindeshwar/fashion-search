@@ -11,6 +11,7 @@ from .core import DEVICE, embed_images, tag_images
 
 
 def build_index(data_dir: Path, index_dir: Path) -> Catalog:
+    """Embed and tag every photo in `data_dir` and save the index to `index_dir`."""
     paths = sorted(p for p in data_dir.iterdir() if p.suffix.lower() in IMAGE_EXTENSIONS)
     if not paths:
         raise FileNotFoundError(f"No images found in {data_dir}")

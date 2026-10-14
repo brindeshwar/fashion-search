@@ -14,12 +14,15 @@ CATALOG_FILE = "catalog.csv"
 
 @dataclass
 class Catalog:
+    """Embeddings and tags for every catalogue photo; row i of each belongs together."""
+
     embeddings: np.ndarray  # (N, D), L2-normalised
     table: pd.DataFrame  # one row per image: file + one column per attribute
     image_dir: Path
 
     @classmethod
     def load(cls, index_dir: Path, image_dir: Path) -> "Catalog":
+        """Load an index written by `fashion-search index`."""
         if not (index_dir / EMBEDDINGS_FILE).exists():
             raise FileNotFoundError(f"No index in {index_dir}. Run `fashion-search index` first.")
         return cls(
@@ -29,6 +32,7 @@ class Catalog:
         )
 
     def save(self, index_dir: Path) -> None:
+        """Write embeddings and tags together, keeping their rows aligned."""
         index_dir.mkdir(parents=True, exist_ok=True)
         np.save(index_dir / EMBEDDINGS_FILE, self.embeddings)
         self.table.to_csv(index_dir / CATALOG_FILE, index=False)
@@ -37,6 +41,7 @@ class Catalog:
         return len(self.table)
 
     def path(self, i: int) -> str:
+        """Absolute path of the photo for row `i`."""
         return str(self.image_dir / self.table.file.iloc[i])
 
     def top_k(self, query_emb: np.ndarray, k: int) -> list[tuple[int, float]]:

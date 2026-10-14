@@ -8,6 +8,7 @@ from .config import DATA_DIR, INDEX_DIR
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Argument parser for every `fashion-search` subcommand."""
     parser = argparse.ArgumentParser(prog="fashion-search", description=__doc__)
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -38,6 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Entry point for the `fashion-search` command."""
     args = build_parser().parse_args(argv)
     # Heavy imports (torch, fastapi, model code) are deferred so `--help` stays instant.
     if args.command == "index":

@@ -30,16 +30,19 @@ INSTALL_HINT = (
 
 
 def is_installed() -> bool:
+    """Whether the optional `fashn_vton` package is installed."""
     return importlib.util.find_spec("fashn_vton") is not None
 
 
 def weights_ready(weights_dir: Path = TRYON_WEIGHTS_DIR) -> bool:
+    """Whether all try-on weight files are present in `weights_dir`."""
     return (weights_dir / "model.safetensors").exists() and all(
         (weights_dir / "dwpose" / f).exists() for f in DWPOSE_FILES
     )
 
 
 def is_available(weights_dir: Path = TRYON_WEIGHTS_DIR) -> bool:
+    """Whether try-on can run: package installed and weights downloaded."""
     return is_installed() and weights_ready(weights_dir)
 
 
@@ -88,6 +91,7 @@ def low_vram_warning(min_free_gb: float = MIN_FREE_VRAM_GB) -> str | None:
 
 @lru_cache(maxsize=1)
 def load_pipeline(weights_dir: Path = TRYON_WEIGHTS_DIR):
+    """Load FASHN VTON once per process (cached); raises with setup steps if unavailable."""
     if not is_available(weights_dir):
         raise RuntimeError(INSTALL_HINT)
     if warning := low_vram_warning():
