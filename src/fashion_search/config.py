@@ -24,5 +24,7 @@ BIREFNET_PATH = _path(
 )
 
 CLEANED_DIR = _path("FASHION_CLEANED_DIR", REPO_ROOT / "artifacts" / "cleaned")
+DB_PATH = _path("FASHION_DB_PATH", REPO_ROOT / "artifacts" / "mirror.db")
+LOOKS_DIR = _path("FASHION_LOOKS_DIR", REPO_ROOT / "artifacts" / "looks")
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}

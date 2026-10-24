@@ -32,7 +32,8 @@ softmax over dot products with the prompts for each attribute. No training happe
 | `evaluate.py` | Old MLP vs zero-shot comparison; writes `reports/results.md` | yes |
 | `tryon.py` | Optional FASHN VTON v1.5 wrapper: `is_available`, `download_weights`, `load_pipeline` (cached, lazy), `try_on`, `fashn_category` | lazily (via `fashn_vton`) |
 | `garment.py` | Garment cleaning before try-on: BiRefNet (official ONNX export, run with onnxruntime-gpu) predicts a foreground mask; `composite_and_crop` (pure NumPy/PIL) puts the garment on white and crops to it with a margin, returning the photo unchanged if the mask is empty | no (ONNX Runtime, imports torch only to load CUDA DLLs) |
-| `jobs.py` | `JobQueue`: one worker thread, in-memory jobs (queued, running, done or error), queue position | no |
+| `jobs.py` | `JobQueue`: one worker thread, in-memory jobs (queued, running, done or error), queue position; the job function receives its `Job`, so it can save results under the job id | no |
+| `store.py` | `LookStore`: saved looks. SQLite (`artifacts/mirror.db`, table `looks`) holds metadata, and each result is a PNG in `artifacts/looks/<id>.png`. One short-lived connection per operation, so it's safe from the API and the worker thread. Also gives the median duration for progress estimates after a restart | no |
 | `api.py` | FastAPI app (`create_api`) for the React UI: items (text + tags combined), image search, images, try-on jobs; also serves `web/dist` | lazily (embed functions are injectable for tests) |
 | `cli.py` | `fashion-search {index,serve,evaluate,tryon,tryon-download}`; heavy imports are deferred | no |
 
@@ -73,7 +74,8 @@ softmax over dot products with the prompts for each attribute. No training happe
                                  POST /api/items/search-by-image        (multipart image)
                                  GET  /images/{file}                    (catalogue files only)
                                  POST /api/tryon -> 202 {job}           (person file + garment_id)
-                                 GET  /api/tryon/{id}  (poll ~1 s)  ->  /api/tryon/{id}/result (PNG)
+                                 GET  /api/tryon/{id}  (poll ~1 s)  ->  saved as a look (store.py)
+                                 GET  /api/looks, /api/looks/{id}/image; DELETE /api/looks/{id}
                                  GET  /*  -> web/dist (built SPA)
 ```
 

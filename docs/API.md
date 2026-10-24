@@ -46,8 +46,29 @@ no query. `tryon_category` is `tops`, `bottoms` or `one-pieces`.
 }
 ```
 
-`status` is `queued`, `running`, `done` or `error`. `expected_seconds` is the median of past
-runs (55 s before the first one finishes). `result_url` is set once `status` is `done`.
+`status` is `queued`, `running`, `done` or `error`. `expected_seconds` is the median of recent
+runs, including saved looks from before a restart (55 s if there are none). `result_url` is set
+once `status` is `done`, and points at the saved look's image.
+
+**SavedLook**: a finished try-on, kept across restarts until deleted.
+
+```json
+{
+  "id": "3f9a1c0b7e2d",
+  "created": 1792852154.1,
+  "image_url": "/api/looks/3f9a1c0b7e2d/image",
+  "garment_id": 42,
+  "garment_label": "red checked plaid",
+  "garment_image_url": "/images/shirt.jpg",
+  "garment_photo_type": "model",
+  "steps": 30,
+  "seed": 42,
+  "clean_garment": true,
+  "duration_seconds": 49.6
+}
+```
+
+`garment_id` and `garment_image_url` are `null` for an uploaded garment.
 
 ## Endpoints
 
@@ -140,12 +161,26 @@ curl -F person=@me.jpg -F garment_id=42 http://127.0.0.1:8000/api/tryon
 
 ### `GET /api/tryon/{job_id}`
 
-The job's current state (TryOnJob). Poll about once a second. Returns 404 for unknown ids.
-Jobs live in memory: the server keeps the last 50 and forgets them all on restart.
+The job's current state (TryOnJob). Poll about once a second. Queued and running jobs live in
+memory and are lost on restart; finished ones are saved as looks, so their status keeps
+answering `done` after a restart. Returns 404 for unknown ids.
 
 ### `GET /api/tryon/{job_id}/result`
 
-The finished image as `image/png`. Returns 404 until the job is `done`.
+The finished image as `image/png` (same as the look's image). Returns 404 until the job is `done`.
+
+### `GET /api/looks`
+
+Saved looks, most recent first: `{"looks": [SavedLook, ...]}`. Query parameter `limit`
+(1–200, default 50).
+
+### `GET /api/looks/{id}/image`
+
+A saved look's image as `image/png`. Returns 404 for unknown ids.
+
+### `DELETE /api/looks/{id}`
+
+Deletes the look and its image file. Returns 204, or 404 if it doesn't exist.
 
 ## Example: try-on from a script
 
@@ -159,7 +194,7 @@ with open("me.jpg", "rb") as person:
         f"{base}/api/tryon", files={"person": person}, data={"garment_id": 42}
     ).json()
 
-while job["status"] in ("queued", "running"):
+while job["status"] in ("queued", "running"):  # the result is also saved as a look
     time.sleep(1)
     job = requests.get(f"{base}/api/tryon/{job['id']}").json()
 

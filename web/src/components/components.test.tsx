@@ -4,6 +4,7 @@ import type { Item } from '../lib/api'
 import { CompareSlider } from './CompareSlider'
 import { FitBar } from './FitBar'
 import { GarmentCard } from './GarmentCard'
+import { Looks } from './Looks'
 import { PhotoDrop } from './PhotoDrop'
 
 const item: Item = {
@@ -99,5 +100,34 @@ describe('CompareSlider', () => {
     expect(before.style.clipPath).toBe('inset(0 50% 0 0)')
     fireEvent.change(screen.getByLabelText('Compare before and after'), { target: { value: 40 } })
     expect(before.style.clipPath).toBe('inset(0 60% 0 0)')
+  })
+})
+
+describe('Looks', () => {
+  const look = {
+    id: 'abc',
+    created: 1,
+    image_url: '/api/looks/abc/image',
+    garment_id: 7,
+    garment_label: 'red checked plaid',
+    garment_image_url: '/images/a.jpg',
+    garment_photo_type: 'model' as const,
+    steps: 30,
+    seed: 42,
+    clean_garment: true,
+    duration_seconds: 50,
+  }
+
+  it('renders nothing without looks', () => {
+    const { container } = render(<Looks looks={[]} onDelete={() => {}} />)
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('shows saved looks and asks to delete one', () => {
+    const onDelete = vi.fn()
+    render(<Looks looks={[look]} onDelete={onDelete} />)
+    expect(screen.getByAltText('Look with red checked plaid')).toHaveAttribute('src', look.image_url)
+    fireEvent.click(screen.getByLabelText('Delete look with red checked plaid'))
+    expect(onDelete).toHaveBeenCalledWith(look)
   })
 })

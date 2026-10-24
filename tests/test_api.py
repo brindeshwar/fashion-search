@@ -10,6 +10,7 @@ from fashion_search import garment as garment_cleaning
 from fashion_search import tryon
 from fashion_search.api import create_api
 from fashion_search.jobs import JobQueue
+from fashion_search.store import LookStore
 
 
 def png_bytes(color="red") -> bytes:
@@ -19,20 +20,43 @@ def png_bytes(color="red") -> bytes:
 
 
 @pytest.fixture
-def client(catalog, tmp_path, monkeypatch):
-    # Never run the real garment-cleaning model in fast tests, even if its weights exist.
-    monkeypatch.setattr(garment_cleaning, "weights_ready", lambda *a: False)
-    for f in catalog.table.file:
-        Image.new("RGB", (8, 8)).save(catalog.image_dir / f)
+def store(tmp_path):
+    return LookStore(tmp_path / "mirror.db", tmp_path / "looks")
+
+
+def make_api(catalog, tmp_path, store):
     # Fake embeddings: the query "points at" item 2; any uploaded image points at item 1.
-    api = create_api(
+    return create_api(
         catalog,
         embed_text=lambda q: catalog.embeddings[2],
         embed_image=lambda im: catalog.embeddings[1],
         jobs=JobQueue(),
         web_dist=tmp_path / "no-dist",
+        store=store,
     )
-    return TestClient(api)
+
+
+@pytest.fixture
+def client(catalog, tmp_path, monkeypatch, store):
+    # Never run the real garment-cleaning model in fast tests, even if its weights exist.
+    monkeypatch.setattr(garment_cleaning, "weights_ready", lambda *a: False)
+    for f in catalog.table.file:
+        Image.new("RGB", (8, 8)).save(catalog.image_dir / f)
+    return TestClient(make_api(catalog, tmp_path, store))
+
+
+def run_tryon(client, monkeypatch, **data):
+    """Start a try-on with a fake model and wait for it to finish."""
+    monkeypatch.setattr(tryon, "is_available", lambda *a: True)
+    monkeypatch.setattr(tryon, "try_on", lambda *a, **kw: Image.new("RGB", (4, 4), "green"))
+    files = {"person": ("p.png", png_bytes(), "image/png")}
+    job = client.post("/api/tryon", files=files, data=data).json()
+    for _ in range(200):
+        job = client.get(f"/api/tryon/{job['id']}").json()
+        if job["status"] in ("done", "error"):
+            return job
+        time.sleep(0.02)
+    raise AssertionError(f"try-on did not finish: {job}")
 
 
 def test_health(client, monkeypatch):
@@ -149,3 +173,63 @@ def test_catalog_search_ranks_within_filter(catalog):
     q = np.zeros(8, np.float32)
     q[0] = 1
     assert catalog.search(q, 1, color="red")[0][0] == 0
+
+
+def test_finished_tryon_is_saved_as_a_look(client, monkeypatch):
+    job = run_tryon(client, monkeypatch, garment_id="0", steps="20")
+    assert job["result_url"] == f"/api/looks/{job['id']}/image"
+    looks = client.get("/api/looks").json()["looks"]
+    assert [lk["id"] for lk in looks] == [job["id"]]
+    look = looks[0]
+    assert look["garment_label"] == "red checked plaid"
+    assert look["garment_image_url"] == "/images/a.jpg"
+    assert (look["steps"], look["garment_photo_type"]) == (20, "model")
+    image = client.get(look["image_url"])
+    assert image.headers["content-type"] == "image/png"
+
+
+def test_looks_survive_a_restart(catalog, tmp_path, monkeypatch, store, client):
+    job = run_tryon(client, monkeypatch, garment_id="1")
+    restarted = TestClient(make_api(catalog, tmp_path, store))  # fresh jobs, same store
+    assert [lk["id"] for lk in restarted.get("/api/looks").json()["looks"]] == [job["id"]]
+    status = restarted.get(f"/api/tryon/{job['id']}").json()
+    assert status["status"] == "done" and status["result_url"].endswith("/image")
+    assert restarted.get(f"/api/tryon/{job['id']}/result").status_code == 200
+    health_eta = restarted.post(
+        "/api/tryon",
+        files={"person": ("p.png", png_bytes(), "image/png")},
+        data={"garment_id": "0"},
+    ).json()["expected_seconds"]
+    assert health_eta == store.median_duration()  # estimate comes from saved looks
+
+
+def test_delete_look_removes_row_and_image(client, monkeypatch, store):
+    job = run_tryon(client, monkeypatch, garment_id="0")
+    assert store.image_path(job["id"]).exists()
+    assert client.delete(f"/api/looks/{job['id']}").status_code == 204
+    assert client.get("/api/looks").json()["looks"] == []
+    assert not store.image_path(job["id"]).exists()
+    assert client.delete(f"/api/looks/{job['id']}").status_code == 404
+    assert client.get(f"/api/looks/{job['id']}/image").status_code == 404
+
+
+def test_look_image_rejects_unknown_ids(client):
+    assert client.get("/api/looks/..%2F..%2Fpyproject.toml/image").status_code == 404
+    assert client.get("/api/looks/nope/image").status_code == 404
+
+
+def test_uploaded_garment_look_has_no_catalogue_link(client, monkeypatch):
+    monkeypatch.setattr(tryon, "is_available", lambda *a: True)
+    monkeypatch.setattr(tryon, "try_on", lambda *a, **kw: Image.new("RGB", (4, 4)))
+    files = {
+        "person": ("p.png", png_bytes(), "image/png"),
+        "garment": ("g.png", png_bytes("blue"), "image/png"),
+    }
+    job_id = client.post("/api/tryon", files=files).json()["id"]
+    for _ in range(200):
+        if client.get(f"/api/tryon/{job_id}").json()["status"] == "done":
+            break
+        time.sleep(0.02)
+    look = client.get("/api/looks").json()["looks"][0]
+    assert (look["garment_id"], look["garment_image_url"]) == (None, None)
+    assert look["garment_label"] == "Uploaded garment"

@@ -13,7 +13,7 @@ from typing import Annotated, Literal
 
 import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel
@@ -21,8 +21,9 @@ from pydantic import BaseModel
 from . import __version__, tryon
 from . import garment as garment_cleaning
 from .catalog import Catalog
-from .config import REPO_ROOT
-from .jobs import JobQueue
+from .config import DB_PATH, LOOKS_DIR, REPO_ROOT
+from .jobs import Job, JobQueue
+from .store import Look, LookStore
 from .taxonomy import ATTRIBUTES
 
 MAX_UPLOAD_BYTES = 15 * 2**20
@@ -59,6 +60,28 @@ class TryOnJob(BaseModel):
     error: str | None = None
 
 
+class SavedLook(BaseModel):
+    """A finished try-on, kept across restarts until deleted."""
+
+    id: str
+    created: float
+    image_url: str
+    garment_id: int | None
+    garment_label: str
+    garment_image_url: str | None
+    garment_photo_type: str
+    steps: int
+    seed: int
+    clean_garment: bool
+    duration_seconds: float
+
+
+class LookList(BaseModel):
+    """Saved looks, most recent first."""
+
+    looks: list[SavedLook]
+
+
 class Health(BaseModel):
     """Server status shown in the app's status pill."""
 
@@ -89,6 +112,7 @@ def create_api(
     embed_image: Callable[[Image.Image], np.ndarray] | None = None,
     jobs: JobQueue | None = None,
     web_dist: Path = WEB_DIST,
+    store: LookStore | None = None,
 ) -> FastAPI:
     """Build the app. The embed functions are injectable so tests don't load the model."""
     if embed_text is None or embed_image is None:
@@ -97,6 +121,7 @@ def create_api(
         embed_text = embed_text or (lambda q: embed_texts([q])[0])
         embed_image = embed_image or (lambda im: embed_images([im])[0])
     jobs = jobs or JobQueue()
+    store = store or LookStore(DB_PATH, LOOKS_DIR)
     durations: list[float] = []
     files = set(catalog.table.file)
 
@@ -116,16 +141,36 @@ def create_api(
     def job_view(job) -> TryOnJob:
         """Build the API view of a job, with timing and queue position."""
         end = job.finished or time.time()
-        expected = float(np.median(durations)) if durations else DEFAULT_TRYON_SECONDS
+        if durations:
+            expected = float(np.median(durations))
+        else:  # after a restart, estimate from saved looks
+            saved = store.median_duration()
+            expected = saved if saved is not None else DEFAULT_TRYON_SECONDS
         return TryOnJob(
             id=job.id,
             status=job.status,
             queue_position=jobs.position(job),
             elapsed_seconds=round(end - job.started, 1) if job.started else 0.0,
             expected_seconds=round(expected, 1),
-            result_url=f"/api/tryon/{job.id}/result" if job.status == "done" else None,
+            result_url=f"/api/looks/{job.id}/image" if job.status == "done" else None,
             error=job.error,
         )
+
+    def saved_look(look: Look) -> SavedLook:
+        """Build the API view of a saved look."""
+        known = look.garment_id is not None and 0 <= look.garment_id < len(catalog)
+        return SavedLook(
+            **vars(look),
+            image_url=f"/api/looks/{look.id}/image",
+            garment_image_url=item(look.garment_id).image_url if known else None,
+        )
+
+    def garment_label(garment_id: int | None) -> str:
+        """Short description of the garment for the looks list."""
+        if garment_id is None:
+            return "Uploaded garment"
+        row = catalog.table.iloc[garment_id]
+        return f"{row['color']} {row['pattern']}"
 
     @app.get("/api/health", response_model=Health)
     def health():
@@ -209,8 +254,8 @@ def create_api(
         else:
             raise HTTPException(422, "Choose a garment from the catalogue or upload one.")
 
-        def run() -> bytes:
-            """Run the try-on on the job worker; returns PNG bytes."""
+        def run(job: Job) -> bytes:
+            """Run the try-on on the job worker, save it as a look, return PNG bytes."""
             t0 = time.time()
             image, clean = garment_img, clean_garment
             if image is None:  # a catalogue garment: use the on-disk cache of cleaned photos
@@ -227,28 +272,68 @@ def create_api(
                 seed,
                 clean=clean,
             )
-            durations.append(time.time() - t0)
+            duration = time.time() - t0
+            durations.append(duration)
             buf = io.BytesIO()
             out.save(buf, format="PNG")
+            look = Look(
+                id=job.id,
+                created=time.time(),
+                garment_id=garment_id if garment is None else None,
+                garment_label=garment_label(garment_id if garment is None else None),
+                garment_photo_type=garment_photo_type,
+                steps=steps,
+                seed=seed,
+                clean_garment=clean_garment,
+                duration_seconds=round(duration, 1),
+            )
+            store.add(look, buf.getvalue())
             return buf.getvalue()
 
         return job_view(jobs.submit(run))
 
     @app.get("/api/tryon/{job_id}", response_model=TryOnJob)
     def tryon_status(job_id: str):
-        """Current state of a try-on job."""
+        """Current state of a try-on job (also answers for looks saved before a restart)."""
         job = jobs.get(job_id)
-        if job is None:
+        if job is not None:
+            return job_view(job)
+        look = store.get(job_id)
+        if look is None:
             raise HTTPException(404, "No such try-on job.")
-        return job_view(job)
+        return TryOnJob(
+            id=look.id,
+            status="done",
+            queue_position=0,
+            elapsed_seconds=look.duration_seconds,
+            expected_seconds=look.duration_seconds,
+            result_url=f"/api/looks/{look.id}/image",
+        )
 
     @app.get("/api/tryon/{job_id}/result")
     def tryon_result(job_id: str):
         """The finished try-on image as PNG (404 until the job is done)."""
-        job = jobs.get(job_id)
-        if job is None or job.status != "done":
+        return look_image(job_id)
+
+    @app.get("/api/looks", response_model=LookList)
+    def list_looks(limit: Annotated[int, Query(ge=1, le=200)] = 50):
+        """Saved try-on results, most recent first."""
+        return LookList(looks=[saved_look(lk) for lk in store.list(limit)])
+
+    @app.get("/api/looks/{look_id}/image")
+    def look_image(look_id: str):
+        """A saved look's image as PNG."""
+        path = store.image_path(look_id)
+        # Only ids that exist in the database are served, which also blocks path tricks.
+        if store.get(look_id) is None or not path.exists():
             raise HTTPException(404, "Result isn't ready.")
-        return Response(job.result, media_type="image/png")
+        return FileResponse(path, media_type="image/png")
+
+    @app.delete("/api/looks/{look_id}", status_code=204)
+    def delete_look(look_id: str):
+        """Delete a saved look and its image."""
+        if not store.delete(look_id):
+            raise HTTPException(404, "No such look.")
 
     if (web_dist / "index.html").exists():
         app.mount("/", StaticFiles(directory=web_dist, html=True), name="web")

@@ -53,7 +53,9 @@ npm --prefix web run build
 
 - **Fast tests never load a model.** `tests/conftest.py` provides a 4-item catalogue with
   hand-made embeddings. The API tests inject fake `embed_text` and `embed_image` functions into
-  `create_api()` and monkeypatch `tryon.try_on`.
+  `create_api()`, pass a `LookStore` in a temporary folder (never the real `artifacts/mirror.db`),
+  monkeypatch `tryon.try_on`, and force `garment.weights_ready()` to False so the real
+  BiRefNet never runs even when its weights are on disk.
 - **Slow tests** (`@pytest.mark.slow`) load the real FashionSigLIP model and, if installed,
   the real try-on pipeline. Run them after changing `core.py` or `tryon.py`.
 - **Frontend tests** (Vitest and Testing Library) cover components and helpers in isolation;
