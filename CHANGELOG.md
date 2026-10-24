@@ -15,6 +15,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ### Fixed
 - The left column (mirror, fit bar, looks) is now capped at the window height and scrolls on its own, so "Your looks" and the fit settings can't end up out of reach below a sticky column.
 
+### Changed
+- Dependencies: React 19.3.1, Vite 8.3.5, Vitest 5.0.5, oxlint 1.89.0, ruff 0.17.1 (kept in step across `pyproject.toml`, pre-commit and CI). `undici` (via jsdom, tests only) patched for 3 advisories; `npm audit` is clean.
+
 ## [1.0.0] - 2026-10-15
 
 ### Removed
