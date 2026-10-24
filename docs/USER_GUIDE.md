@@ -32,7 +32,9 @@ Photos that work best:
 - One person in the frame
 - Reasonable light; the background doesn't matter much
 
-Your photo never leaves your computer: the server runs locally and keeps uploads in memory only.
+Your photo never leaves your computer: the server runs locally, and your uploaded photo is
+kept in memory only, never written to disk. Finished results (which show you wearing the
+garment) are saved on your computer in `artifacts/looks/` until you delete them.
 
 ## 2. Find a garment
 
@@ -68,8 +70,9 @@ The mirror shows a **before/after** view. Drag the slider (or focus it and use t
 keys) to compare your original photo with the result. Use the **download** button to save
 it as a PNG.
 
-Every result from this session appears under **Your looks**, so you can compare several
-garments. Looks disappear when you reload the page or restart the server.
+Every result is saved under **Your looks**, newest first, so you can compare garments. Looks
+stay after you reload the page or restart the server. Click a look to open it full size, or
+hover over it and click the bin icon to delete it.
 
 ## Fit settings
 
@@ -91,7 +94,6 @@ Open **Fit settings** under the Try it on button.
 - **It's slow on CPU.** Without an NVIDIA GPU, search still works, but try-on takes many minutes.
 - **Tops are the focus.** The catalogue is shirts. Dresses are sent to the model as one-piece
   garments; trousers and skirts aren't in the catalogue.
-- **Nothing is saved.** Results last for the session only.
 
 ## If something goes wrong
 

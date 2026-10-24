@@ -6,8 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- **Saved looks:** every finished try-on is saved (SQLite metadata + PNG in `artifacts/`) and shows under "Your looks" after a reload or restart, with a delete button. New endpoints: `GET /api/looks`, `GET /api/looks/{id}/image`, `DELETE /api/looks/{id}`. Progress estimates use saved durations after a restart. The person photo is never stored.
 - **Garment cleaning before try-on:** BiRefNet removes the garment photo's background (beds, walls, props, price text) and crops to the garment. It's on by default, with a "Clean up garment photo" toggle in Fit settings, `clean_garment` in the API and `--no-clean` in the CLI. Catalogue garments are cleaned once and cached. `fashion-search tryon-download` also fetches the model (~930 MB). See ADR-011.
 - **One-command start:** `start.ps1` (Windows) and `start.sh` (Linux/macOS) set up whatever is missing (environment, optional try-on, web build, index) and start the app. Options: `-WithTryOn`, `-Port`, `-SetupOnly`.
+
+### Fixed
+- The left column (mirror, fit bar, looks) is now capped at the window height and scrolls on its own, so "Your looks" and the fit settings can't end up out of reach below a sticky column.
 
 ## [1.0.0] - 2026-10-15
 

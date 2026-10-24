@@ -103,6 +103,9 @@ Every path can be changed with an environment variable (see `src/fashion_search/
 | `FASHION_INDEX_DIR` | `artifacts/index` | Generated embeddings and tags |
 | `FASHION_TRYON_WEIGHTS_DIR` | `artifacts/weights/fashn-vton-1.5` | Try-on weights |
 | `FASHION_BIREFNET_PATH` | `artifacts/weights/birefnet/BiRefNet-general-epoch_244.onnx` | Garment-cleaning model |
+| `FASHION_DB_PATH` | `artifacts/mirror.db` | Saved looks (SQLite) |
+| `FASHION_LOOKS_DIR` | `artifacts/looks` | Saved look images |
+| `FASHION_CLEANED_DIR` | `artifacts/cleaned` | Cache of cleaned garment photos |
 | `FASHION_MNIST_DIR` | `data/fashion_mnist` | Dataset for `fashion-search evaluate` |
 | `FASHION_REPORTS_DIR` | `reports` | Where `evaluate` writes results |
 | `FASHION_MODEL_ID` | `hf-hub:Marqo/marqo-fashionSigLIP` | Search and tagging model |
