@@ -36,6 +36,20 @@ export interface TryOnJob {
   error: string | null
 }
 
+export interface SavedLook {
+  id: string
+  created: number
+  image_url: string
+  garment_id: number | null
+  garment_label: string
+  garment_image_url: string | null
+  garment_photo_type: PhotoType
+  steps: number
+  seed: number
+  clean_garment: boolean
+  duration_seconds: number
+}
+
 export type Filters = Partial<Record<TagName, string>>
 
 export class ApiError extends Error {}
@@ -101,3 +115,10 @@ export function startTryOn(r: TryOnRequest) {
 }
 
 export const getTryOnJob = (id: string) => request<TryOnJob>(`/api/tryon/${id}`)
+
+export const getLooks = () => request<{ looks: SavedLook[] }>('/api/looks?limit=50')
+
+export async function deleteLook(id: string) {
+  const res = await fetch(`/api/looks/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  if (!res.ok && res.status !== 404) throw new ApiError(`Couldn't delete the look (${res.status})`)
+}

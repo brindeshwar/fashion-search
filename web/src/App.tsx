@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { FitBar, type FitSettings } from './components/FitBar'
+import { Looks } from './components/Looks'
 import { Mirror } from './components/Mirror'
 import { Wardrobe } from './components/Wardrobe'
 import { useObjectUrl } from './hooks/useObjectUrl'
 import { useTryOn } from './hooks/useTryOn'
-import { getHealth, type Health, type Item } from './lib/api'
-
-interface Look {
-  url: string
-  garment: Item
-}
+import {
+  deleteLook,
+  getHealth,
+  getLooks,
+  type Health,
+  type Item,
+  type SavedLook,
+} from './lib/api'
 
 export default function App() {
   const [health, setHealth] = useState<Health | null>(null)
@@ -23,23 +26,31 @@ export default function App() {
     seed: 42,
     cleanGarment: true,
   })
-  const [looks, setLooks] = useState<Look[]>([])
+  const [looks, setLooks] = useState<SavedLook[]>([])
   const { state, run, reset } = useTryOn()
+
+  const refreshLooks = () =>
+    getLooks().then(
+      (r) => setLooks(r.looks),
+      () => {},
+    )
 
   useEffect(() => {
     getHealth().then(setHealth, (e: Error) => setHealthError(e.message))
+    refreshLooks()
   }, [])
 
   const busy = state.phase === 'submitting' || state.phase === 'waiting'
   const tryOn = async () => {
     if (!person || !garment) return
-    const fitted = garment // remember it: the user may browse other pieces while waiting
-    const job = await run({ person, garmentId: fitted.id, ...settings })
-    // Keep every finished result for this session so people can compare looks.
-    if (job?.result_url) {
-      const url = job.result_url
-      setLooks((l) => [{ url, garment: fitted }, ...l])
-    }
+    const job = await run({ person, garmentId: garment.id, ...settings })
+    // The server saves every finished result as a look; refresh the list to show it.
+    if (job?.result_url) refreshLooks()
+  }
+  const removeLook = async (look: SavedLook) => {
+    if (!window.confirm(`Delete this look (${look.garment_label})?`)) return
+    await deleteLook(look.id)
+    setLooks((l) => l.filter((x) => x.id !== look.id))
   }
   const choosePerson = (f: File | null) => {
     reset()
@@ -99,18 +110,7 @@ export default function App() {
           {health && !health.tryon_available && health.tryon_setup_hint && (
             <pre className="setup-hint">{health.tryon_setup_hint}</pre>
           )}
-          {looks.length > 0 && (
-            <div className="looks">
-              <h3 className="looks__title">Your looks</h3>
-              <div className="looks__row">
-                {looks.map((l) => (
-                  <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="look">
-                    <img src={l.url} alt={`Look with ${l.garment.tags.pattern} shirt`} />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
+          <Looks looks={looks} onDelete={removeLook} />
         </section>
 
         <Wardrobe

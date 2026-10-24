@@ -1,7 +1,8 @@
 """A tiny in-process job queue for slow GPU work (virtual try-on, ~50 s per image).
 
 One worker thread runs jobs in order, because the GPU can only fit one try-on at a
-time. Jobs live in memory: they are lost on restart, which is fine for a local app.
+time. Jobs live in memory; the job function gets its own `Job`, so it can persist its
+result under the job id (the API saves finished try-ons as looks, see store.py).
 """
 
 import queue
@@ -34,13 +35,13 @@ class JobQueue:
     def __init__(self, max_kept: int = 50):
         self._jobs: dict[str, Job] = {}
         self._order: list[str] = []
-        self._queue: queue.Queue[tuple[Job, Callable[[], Any]]] = queue.Queue()
+        self._queue: queue.Queue[tuple[Job, Callable[[Job], Any]]] = queue.Queue()
         self._lock = threading.Lock()
         self._max_kept = max_kept
         threading.Thread(target=self._worker, daemon=True, name="job-worker").start()
 
-    def submit(self, fn: Callable[[], Any]) -> Job:
-        """Queue `fn` to run on the worker and return its job immediately."""
+    def submit(self, fn: Callable[[Job], Any]) -> Job:
+        """Queue `fn(job)` to run on the worker and return the job immediately."""
         job = Job(id=uuid.uuid4().hex[:12])
         with self._lock:
             self._jobs[job.id] = job
@@ -69,7 +70,7 @@ class JobQueue:
             job, fn = self._queue.get()
             job.status, job.started = "running", time.time()
             try:
-                job.result = fn()
+                job.result = fn(job)
                 job.status = "done"
             except Exception as e:  # report any failure to the client instead of dying
                 job.error, job.status = str(e) or type(e).__name__, "error"
