@@ -27,8 +27,8 @@ softmax over dot products with the prompts for each attribute. No training happe
 | `config.py` | Paths and model ID, each overridable with `FASHION_*` env vars | no |
 | `taxonomy.py` | `ATTRIBUTES`: the tag vocabulary and prompt templates | no |
 | `core.py` | Loads the model (cached, one per process), `embed_images`, `embed_texts`, `softmax_scores`, `zero_shot`, `tag_images` | **yes** (the only module that does) |
-| `catalog.py` | `Catalog` dataclass: load/save the index, `top_k`, `filter`, `search` (filter then rank), `tag_values`, `path` | no |
-| `indexing.py` | `build_index(data_dir, index_dir)`: embeds, tags and saves | via core |
+| `catalog.py` | `Catalog` dataclass: load/save the index, `top_k`, `filter`, `search` (filter then rank, optionally uploads only), `tag_values`, `path`; `add`/`remove`/`index_of`/`is_upload` for garments added from the app | no |
+| `indexing.py` | `build_index(data_dir, index_dir)`: embeds, tags and saves; `tag_rows(emb)` (shared with uploads) | via core |
 | `evaluate.py` | Old MLP vs zero-shot comparison; writes `reports/results.md` | yes |
 | `tryon.py` | Optional FASHN VTON v1.5 wrapper: `is_available`, `download_weights`, `load_pipeline` (cached, lazy), `try_on`, `fashn_category` | lazily (via `fashn_vton`) |
 | `garment.py` | Garment cleaning before try-on: BiRefNet (official ONNX export, run with onnxruntime-gpu) predicts a foreground mask; `composite_and_crop` (pure NumPy/PIL) puts the garment on white and crops to it with a margin, returning the photo unchanged if the mask is empty | no (ONNX Runtime, imports torch only to load CUDA DLLs) |
@@ -43,6 +43,8 @@ softmax over dot products with the prompts for each attribute. No training happe
 2. Row `i` of `embeddings.npy` matches row `i` of `catalog.csv`. Both are written together by `Catalog.save`, so never edit one without the other.
 3. `catalog.csv` has one column per key in `ATTRIBUTES`, plus `<attr>_conf`. If you change the taxonomy, rebuild the index.
 4. Image paths are stored as bare filenames and resolved against `data_dir` at load time, so the index survives the repo being moved.
+5. Item ids are row positions. Deleting an uploaded garment shifts later rows, so anything stored long-term (saved looks) refers to a garment by **filename**, never by id (ADR-012).
+6. A filename starting with `upload-` marks a garment the user added. Only those can be deleted, and the marker survives a full re-index because it's part of the filename.
 
 ## Evaluation (`evaluate.py`)
 
@@ -70,7 +72,8 @@ softmax over dot products with the prompts for each attribute. No training happe
 ```
  browser (React, web/) --HTTP--> FastAPI (api.py)  -- one process: `fashion-search serve` on :8000
    Mirror + FitBar               GET  /api/health, /api/tags
-   Wardrobe                      GET  /api/items?q=&color=&pattern=&sleeve=&category=&style=&limit=
+   Wardrobe                      GET  /api/items?q=&color=&pattern=&sleeve=&category=&style=&uploaded=&limit=
+                                 POST /api/items (add your garment); DELETE /api/items/{id} (uploads only)
                                  POST /api/items/search-by-image        (multipart image)
                                  GET  /images/{file}                    (catalogue files only)
                                  POST /api/tryon -> 202 {job}           (person file + garment_id)

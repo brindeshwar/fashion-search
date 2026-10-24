@@ -81,3 +81,10 @@ and mark the old one `Superseded`. Format: context → decision → consequences
   - On the CPU: 11–17 s per garment (6 measured), with no GPU memory used; try-on peaked at 3.6 GB of PyTorch memory with no spill.
   - Quality on 6 garments (raw vs cleaned, "model" mode): cleaning fixed 1 (striped shirt: no floor-length drape), was neutral on 4, and didn't help 1 (wrinkled shirt on a bed); it never made a result worse. With cleaned input, "flat-lay" mode was still worse on 3 of 6, so ADR-008's "model" default stands.
 - **Consequences:** the first try-on of each garment takes ~15 s longer, later ones nothing extra; downloads grow by ~930 MB; ~1–2 GB of RAM is used while the model is loaded. Revisit GPU inference (or the 213 MB `swin_v1_tiny` variant) on cards with more VRAM.
+
+## ADR-012: Your own garments: an `upload-` filename prefix, looks keyed by filename
+- **Date:** 2026-10-24 · **Status:** Accepted
+- **Context:** The user asked for adding their own garments from the app, with delete limited to uploads (the original 500 photos must stay safe). Item ids are row positions in the index, and saved looks referred to garments by that id.
+- **Alternatives:** a separate uploads folder plus a `source` column in `catalog.csv` (a re-index would lose the column and turn uploads into undeletable catalogue items); stable integer ids (a breaking index-format change); tombstones instead of deleting rows (stale rows in every search).
+- **Decision:** uploads are saved in the catalogue folder as `upload-<uuid>.jpg`; the prefix is the single source of truth for "yours" and survives a re-index. Deleting removes the row and the file, so later ids shift. Saved looks store the garment's **filename** and resolve the id when read; the looks database migrates the column in place.
+- **Consequences:** no index-format change, and uploads behave like any other garment. Clients must not cache item ids across a delete (documented in API.md); the web app clears its selection after a delete.

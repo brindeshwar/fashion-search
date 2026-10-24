@@ -24,6 +24,19 @@ def store(tmp_path):
     return LookStore(tmp_path / "mirror.db", tmp_path / "looks")
 
 
+def fake_tags(emb):
+    return [
+        {
+            "category": "t-shirt",
+            "color": "green",
+            "pattern": "striped",
+            "sleeve": "short sleeves",
+            "style": "casual",
+        }
+        for _ in emb
+    ]
+
+
 def make_api(catalog, tmp_path, store):
     # Fake embeddings: the query "points at" item 2; any uploaded image points at item 1.
     return create_api(
@@ -33,6 +46,8 @@ def make_api(catalog, tmp_path, store):
         jobs=JobQueue(),
         web_dist=tmp_path / "no-dist",
         store=store,
+        index_dir=tmp_path / "index",
+        tag_rows=fake_tags,
     )
 
 
@@ -233,3 +248,52 @@ def test_uploaded_garment_look_has_no_catalogue_link(client, monkeypatch):
     look = client.get("/api/looks").json()["looks"][0]
     assert (look["garment_id"], look["garment_image_url"]) == (None, None)
     assert look["garment_label"] == "Uploaded garment"
+
+
+def upload(client, color="blue"):
+    files = {"image": ("mine.png", png_bytes(color), "image/png")}
+    return client.post("/api/items", files=files)
+
+
+def test_upload_adds_a_searchable_tagged_item(client, catalog, tmp_path):
+    r = upload(client)
+    assert r.status_code == 201
+    new = r.json()
+    assert new["id"] == 4 and new["uploaded"] is True
+    assert new["tags"]["color"] == "green" and new["image_url"].startswith("/images/upload-")
+    assert client.get(new["image_url"]).status_code == 200
+    assert client.get("/api/items").json()["total"] == 5
+    assert client.get("/api/items", params={"color": "green"}).json()["total"] == 1
+    assert (tmp_path / "index" / "catalog.csv").exists()  # saved, so it survives a restart
+    assert client.get("/api/items/0").json()["uploaded"] is False
+    mine = client.get("/api/items", params={"uploaded": "true"}).json()
+    assert mine["total"] == 1 and mine["items"][0]["id"] == new["id"]
+
+
+def test_upload_rejects_non_images(client):
+    files = {"image": ("x.txt", b"nope", "text/plain")}
+    assert client.post("/api/items", files=files).status_code == 400
+
+
+def test_only_uploads_can_be_deleted(client, catalog):
+    assert client.delete("/api/items/0").status_code == 403
+    assert client.delete("/api/items/99").status_code == 404
+    new = upload(client).json()
+    path = catalog.image_dir / new["image_url"].removeprefix("/images/")
+    assert client.delete(f"/api/items/{new['id']}").status_code == 204
+    assert not path.exists()
+    assert client.get("/api/items").json()["total"] == 4
+    assert client.get(new["image_url"]).status_code == 404
+
+
+def test_looks_follow_their_garment_when_rows_shift(client, monkeypatch):
+    first, second = upload(client).json(), upload(client, "red").json()
+    look_job = run_tryon(client, monkeypatch, garment_id=str(second["id"]))
+    assert client.delete(f"/api/items/{first['id']}").status_code == 204
+    look = client.get("/api/looks").json()["looks"][0]
+    assert look["id"] == look_job["id"]
+    assert look["garment_id"] == second["id"] - 1  # moved up one row, still the same garment
+    assert look["garment_image_url"] == second["image_url"]
+    assert client.delete(f"/api/items/{look['garment_id']}").status_code == 204
+    gone = client.get("/api/looks").json()["looks"][0]
+    assert (gone["garment_id"], gone["garment_image_url"]) == (None, None)

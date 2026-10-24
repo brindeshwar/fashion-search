@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TryOnJob } from './api'
-import { estimateProgress, statusText } from './progress'
+import { estimateProgress, pieces, statusText } from './progress'
 
 const job = (over: Partial<TryOnJob>): TryOnJob => ({
   id: 'x',
@@ -37,5 +37,13 @@ describe('statusText', () => {
   it('counts down while running', () => {
     expect(statusText(job({}), 20)).toBe('Fitting the garment… about 30 s left')
     expect(statusText(job({}), 60)).toBe('Almost there…')
+  })
+})
+
+describe('pieces', () => {
+  it('uses the singular for one', () => {
+    expect(pieces(1)).toBe('1 piece')
+    expect(pieces(0)).toBe('0 pieces')
+    expect(pieces(500)).toBe('500 pieces')
   })
 })

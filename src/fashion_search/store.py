@@ -8,14 +8,14 @@ photo is never stored, only the finished result.
 import sqlite3
 import statistics
 from contextlib import closing
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS looks (
     id                 TEXT PRIMARY KEY,
     created            REAL NOT NULL,
-    garment_id         INTEGER,
+    garment_file       TEXT,
     garment_label      TEXT NOT NULL,
     garment_photo_type TEXT NOT NULL,
     steps              INTEGER NOT NULL,
@@ -32,13 +32,16 @@ class Look:
 
     id: str
     created: float
-    garment_id: int | None
+    garment_file: str | None  # filename, not row: rows shift when uploads are deleted
     garment_label: str
     garment_photo_type: str
     steps: int
     seed: int
     clean_garment: bool
     duration_seconds: float
+
+
+COLUMNS = ", ".join(f.name for f in fields(Look))
 
 
 class LookStore:
@@ -50,6 +53,10 @@ class LookStore:
         images_dir.mkdir(parents=True, exist_ok=True)
         with closing(self._connect()) as db, db:
             db.execute(SCHEMA)
+            # Databases created before garment_file existed get the column added.
+            have = {row[1] for row in db.execute("PRAGMA table_info(looks)")}
+            if "garment_file" not in have:
+                db.execute("ALTER TABLE looks ADD COLUMN garment_file TEXT")
 
     def _connect(self) -> sqlite3.Connection:
         # A short-lived connection per operation keeps this thread-safe without a lock.
@@ -72,14 +79,14 @@ class LookStore:
     def get(self, look_id: str) -> Look | None:
         """A look by id, or None."""
         with closing(self._connect()) as db:
-            row = db.execute("SELECT * FROM looks WHERE id = ?", (look_id,)).fetchone()
+            row = db.execute(f"SELECT {COLUMNS} FROM looks WHERE id = ?", (look_id,)).fetchone()
         return self._look(row) if row else None
 
     def list(self, limit: int = 50) -> list[Look]:
         """Most recent looks first."""
         with closing(self._connect()) as db:
             rows = db.execute(
-                "SELECT * FROM looks ORDER BY created DESC LIMIT ?", (limit,)
+                f"SELECT {COLUMNS} FROM looks ORDER BY created DESC LIMIT ?", (limit,)
             ).fetchall()
         return [self._look(r) for r in rows]
 
