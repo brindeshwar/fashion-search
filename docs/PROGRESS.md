@@ -16,8 +16,8 @@ end to end on the RTX 4060; all checks pass.
 - [x] **Persist looks** (SQLite + PNG files) so they survive a server restart
 - [x] **Upload your own garments** in the web app (delete applies to uploads only), with incremental indexing (ADR-012)
 - [x] **One-command start scripts** (`start.ps1` / `start.sh`)
-- [ ] **Browser end-to-end test** (Playwright, approved) in CI
-- [ ] **Screenshot of a finished try-on** for the README and user guide
+- [x] **Browser end-to-end test** (Playwright) in CI, plus a screenshot script
+- [x] **Screenshot of a finished try-on** for the README and user guide (no blur needed)
 
 ### Skipped by the user (2026-10-24)
 - Docker image: not needed for local use; the start scripts cover it

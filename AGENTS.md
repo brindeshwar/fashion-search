@@ -62,6 +62,7 @@ npm --prefix web run dev                # frontend dev server on :5173 (proxies 
 .venv/Scripts/pytest                    # fast tests, no model download
 .venv/Scripts/pytest -m slow            # also loads the real model (~800 MB first time)
 npm --prefix web run lint && npm --prefix web run typecheck && npm --prefix web test
+npm --prefix web run e2e                # Playwright browser tests (fake models)
 ```
 
 On Linux or macOS, replace `.venv/Scripts/` with `.venv/bin/`.
