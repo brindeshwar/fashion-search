@@ -185,6 +185,9 @@ button, input, select { font: inherit; color: inherit; }
 .slider__ends { display: flex; justify-content: space-between; font-size: 12px; }
 .seed { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
 .seed input { width: 84px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); padding: 0 8px; }
+.toggle { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; grid-column: 1 / -1; }
+.toggle input { accent-color: var(--accent); margin-top: 3px; }
+.toggle small { display: block; color: var(--muted); font-size: 12px; }
 .setup-hint { margin: 0; padding: 12px 14px; border-radius: var(--radius); background: var(--warn-soft); color: var(--warn); font-size: 13px; white-space: pre-wrap; }
 
 .looks__title { font-size: 14px; font-weight: 500; margin: 4px 0 8px; color: var(--muted); }

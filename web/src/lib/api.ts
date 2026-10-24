@@ -23,6 +23,7 @@ export interface Health {
   tryon_available: boolean
   tryon_setup_hint: string | null
   gpu_warning: string | null
+  garment_cleaning_available: boolean
 }
 
 export interface TryOnJob {
@@ -85,6 +86,7 @@ export interface TryOnRequest {
   photoType: PhotoType
   steps: number
   seed: number
+  cleanGarment: boolean
 }
 
 export function startTryOn(r: TryOnRequest) {
@@ -94,6 +96,7 @@ export function startTryOn(r: TryOnRequest) {
   form.append('garment_photo_type', r.photoType)
   form.append('steps', String(r.steps))
   form.append('seed', String(r.seed))
+  form.append('clean_garment', String(r.cleanGarment))
   return request<TryOnJob>('/api/tryon', { method: 'POST', body: form })
 }
 

@@ -23,7 +23,7 @@ DWPOSE_FILES = ["yolox_l.onnx", "dw-ll_ucoco_384.onnx"]
 MIN_FREE_VRAM_GB = 5.0  # measured peak ~4.4 GB torch + ONNX pose/parser on RTX 4060
 
 INSTALL_HINT = (
-    "Virtual try-on needs the optional extra and its weights (~2 GB):\n"
+    "Virtual try-on needs the optional extra and its weights (~3 GB):\n"
     '  pip install -e ".[tryon]"\n'
     "  fashion-search tryon-download"
 )
@@ -64,6 +64,9 @@ def download_weights(weights_dir: Path = TRYON_WEIGHTS_DIR) -> None:
     from fashn_human_parser import FashnHumanParser
 
     FashnHumanParser(device="cpu")
+    from . import garment
+
+    garment.download_weights()
     print("Done.")
 
 
@@ -108,8 +111,18 @@ def try_on(
     garment_photo_type: GarmentPhotoType = "model",
     steps: int = 30,
     seed: int = 42,
+    clean: bool = True,
 ) -> Image.Image:
-    """Return a photo of ``person`` wearing ``garment``."""
+    """Return a photo of ``person`` wearing ``garment``.
+
+    With ``clean``, the garment photo's background is removed and it is cropped first
+    (see ``garment.py``); this is skipped if the BiRefNet weights aren't downloaded.
+    """
+    if clean:
+        from . import garment as garment_cleaning
+
+        if garment_cleaning.weights_ready():
+            garment = garment_cleaning.clean_garment(garment)
     result = load_pipeline()(
         person_image=person.convert("RGB"),
         garment_image=garment.convert("RGB"),
