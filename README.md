@@ -24,6 +24,15 @@ on yourself** with virtual try-on. Everything runs locally on your own GPU.
 ## Quickstart
 
 You need Python 3.10+, Node 20+ and, for try-on, an NVIDIA GPU with about 8 GB VRAM.
+Put your garment photos in `data/shirts/`, then run **one command**. It sets up whatever is
+missing (environment, web build, index) and starts the app:
+
+```bash
+.\start.ps1 -WithTryOn        # Windows  (drop -WithTryOn for search only)
+./start.sh --with-tryon       # Linux / macOS
+```
+
+Or step by step:
 
 ```bash
 git clone https://github.com/brindeshwar/fashion-search.git && cd fashion-search

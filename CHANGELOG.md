@@ -7,6 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ### Added
 - **Garment cleaning before try-on:** BiRefNet removes the garment photo's background (beds, walls, props, price text) and crops to the garment. It's on by default, with a "Clean up garment photo" toggle in Fit settings, `clean_garment` in the API and `--no-clean` in the CLI. Catalogue garments are cleaned once and cached. `fashion-search tryon-download` also fetches the model (~930 MB). See ADR-011.
+- **One-command start:** `start.ps1` (Windows) and `start.sh` (Linux/macOS) set up whatever is missing (environment, optional try-on, web build, index) and start the app. Options: `-WithTryOn`, `-Port`, `-SetupOnly`.
 
 ## [1.0.0] - 2026-10-15
 

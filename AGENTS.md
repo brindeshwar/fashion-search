@@ -43,6 +43,9 @@ python -m venv .venv
 .venv/Scripts/pre-commit install
 npm --prefix web ci && npm --prefix web run build
 
+# one command (does the setup steps above if needed, then serves)
+.\start.ps1 -WithTryOn                 # Windows; Linux/macOS: ./start.sh --with-tryon
+
 # daily
 .venv/Scripts/fashion-search index      # embed + tag data/shirts -> artifacts/index
 .venv/Scripts/fashion-search serve      # web app + API on http://127.0.0.1:8000 (needs web/dist)

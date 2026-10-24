@@ -12,6 +12,24 @@ Commands are for Windows (PowerShell or Git Bash). On Linux or macOS, replace
 | GPU | none (CPU works for search) | NVIDIA with 8 GB VRAM for try-on |
 | Disk | ~3 GB (search model + environment) | ~6 GB with try-on weights |
 
+## Quick start
+
+`start.ps1` (Windows) and `start.sh` (Linux/macOS) do steps 1–3 below for you, skipping
+anything that's already done, and then start the server:
+
+```bash
+.\start.ps1                   # search and web app
+.\start.ps1 -WithTryOn        # also install try-on and its weights (~3.2 GB)
+.\start.ps1 -Port 9000        # another port
+.\start.ps1 -SetupOnly        # set everything up, don't start the server
+```
+
+On Linux/macOS: `./start.sh`, `--with-tryon`, `--port 9000`, `--setup-only`. The script picks
+the CUDA or CPU build of PyTorch depending on whether `nvidia-smi` is present. It refuses to
+run if the port is already in use, because a running server locks files that a reinstall needs.
+
+The manual steps follow.
+
 ## 1. Install
 
 ```bash

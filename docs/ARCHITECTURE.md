@@ -92,4 +92,5 @@ docs/                 guides, ADRs, progress; history/ (old handoffs), images/ (
 reports/              generated evaluation output (results.md)
 legacy/               the original 2025 notebook (read-only)
 data/  artifacts/     local, git-ignored: photos, Fashion-MNIST, index, try-on weights
+start.ps1, start.sh   one-command setup + serve
 ```
