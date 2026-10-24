@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fashion-search"
-version = "1.0.0"
+version = "1.1.0"
 description = "Fashion visual search, zero-shot tagging and virtual try-on, with a React web app"
 readme = "README.md"
 requires-python = ">=3.10"
