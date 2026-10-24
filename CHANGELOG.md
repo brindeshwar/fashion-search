@@ -6,6 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- **Browser end-to-end tests** (Playwright) against the real app with fake models, and an `e2e` CI job; `npm run screenshots` regenerates the README screenshots from the real app. The README now shows a finished try-on.
 - **Add your own garments:** "Add yours" in the wardrobe uploads a photo, which is tagged and searchable immediately (`POST /api/items`), with a "Yours" filter (`uploaded=true`), badge, and delete for your uploads only (`DELETE /api/items/{id}`). ADR-012.
 - **Saved looks:** every finished try-on is saved (SQLite metadata + PNG in `artifacts/`) and shows under "Your looks" after a reload or restart, with a delete button. New endpoints: `GET /api/looks`, `GET /api/looks/{id}/image`, `DELETE /api/looks/{id}`. Progress estimates use saved durations after a restart. The person photo is never stored.
 - **Garment cleaning before try-on:** BiRefNet removes the garment photo's background (beds, walls, props, price text) and crops to the garment. It's on by default, with a "Clean up garment photo" toggle in Fit settings, `clean_garment` in the API and `--no-clean` in the CLI. Catalogue garments are cleaned once and cached. `fashion-search tryon-download` also fetches the model (~930 MB). See ADR-011.

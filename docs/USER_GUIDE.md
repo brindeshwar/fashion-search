@@ -76,6 +76,8 @@ You can keep browsing the wardrobe while you wait.
 
 ## 4. The result
 
+![The result: drag the slider to compare before and after](images/mirror-tryon.jpg)
+
 The mirror shows a **before/after** view. Drag the slider (or focus it and use the arrow
 keys) to compare your original photo with the result. Use the **download** button to save
 it as a PNG.

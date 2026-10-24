@@ -41,6 +41,7 @@ npm --prefix web run lint
 npm --prefix web run typecheck
 npm --prefix web test
 npm --prefix web run build
+npm --prefix web run e2e              # browser tests (needs the build; starts its own server)
 ```
 
 | CI job (`.github/workflows/ci.yml`) | Runs |
@@ -48,6 +49,7 @@ npm --prefix web run build
 | `lint` | ruff check and format |
 | `test (3.10)`, `test (3.12)` | fast pytest and `fashion-search --help`, CPU-only torch |
 | `web` | npm ci, lint, typecheck, Vitest, build |
+| `e2e` | CPU torch + package, build, Playwright Chromium, browser tests; traces uploaded on failure |
 
 ## Testing approach
 
@@ -60,6 +62,25 @@ npm --prefix web run build
   the real try-on pipeline. Run them after changing `core.py` or `tryon.py`.
 - **Frontend tests** (Vitest and Testing Library) cover components and helpers in isolation;
   `fetch` isn't mocked globally, so keep network calls in `lib/api.ts` and test logic around them.
+- **Browser end-to-end tests** (Playwright, `web/e2e/mirror.spec.ts`) drive the built app
+  against `tests/e2e_server.py`: the real FastAPI routes and real frontend with a generated
+  6-garment catalogue and instant fake search, tagging and try-on. They cover search, filters,
+  try-on, saved looks across a reload, adding and deleting your own garment, and that the
+  original catalogue can't be deleted. One-time setup: `npx --prefix web playwright install chromium`.
+  Set `PYTHON` if your interpreter isn't `.venv`.
+
+## Screenshots
+
+`npm --prefix web run screenshots` regenerates `docs/images/*.jpg` from the **real** running
+app (start `fashion-search serve` first) at 1280×800:
+
+```bash
+PERSON_PHOTO=path/to/person.jpg GARMENT_PHOTO=path/to/garment.jpg npm --prefix web run screenshots
+```
+
+It blurs catalogue photos (ADR-004), adds `GARMENT_PHOTO` through "Add yours", runs a real
+try-on, captures empty, fitting and result shots, then deletes the garment and look it created.
+The README images use FASHN's Apache-2.0 sample photos.
 
 ## Common changes
 
