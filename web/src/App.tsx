@@ -17,7 +17,12 @@ export default function App() {
   const [person, setPerson] = useState<File | null>(null)
   const personUrl = useObjectUrl(person)
   const [garment, setGarment] = useState<Item | null>(null)
-  const [settings, setSettings] = useState<FitSettings>({ photoType: 'model', steps: 30, seed: 42 })
+  const [settings, setSettings] = useState<FitSettings>({
+    photoType: 'model',
+    steps: 30,
+    seed: 42,
+    cleanGarment: true,
+  })
   const [looks, setLooks] = useState<Look[]>([])
   const { state, run, reset } = useTryOn()
 

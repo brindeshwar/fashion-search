@@ -19,7 +19,7 @@ const item: Item = {
   tryon_category: 'tops',
   score: 0.12,
 }
-const settings = { photoType: 'model' as const, steps: 30, seed: 42 }
+const settings = { photoType: 'model' as const, steps: 30, seed: 42, cleanGarment: true }
 
 describe('GarmentCard', () => {
   it('shows readable tags and reports selection', () => {
@@ -57,6 +57,13 @@ describe('FitBar', () => {
     render(<FitBar {...props} onTryOn={onTryOn} garment={item} hasPerson />)
     fireEvent.click(screen.getByRole('button', { name: /try it on/i }))
     expect(onTryOn).toHaveBeenCalled()
+  })
+
+  it('lets the user turn garment cleaning off', () => {
+    const onSettings = vi.fn()
+    render(<FitBar {...props} onSettings={onSettings} garment={item} hasPerson />)
+    fireEvent.click(screen.getByLabelText(/clean up garment photo/i))
+    expect(onSettings).toHaveBeenCalledWith({ ...settings, cleanGarment: false })
   })
 
   it('explains a server-side reason over everything else', () => {

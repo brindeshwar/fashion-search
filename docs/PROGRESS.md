@@ -11,18 +11,18 @@ end to end on the RTX 4060; all checks pass.
 
 ## Task board
 
-### Now
-- _(nothing in progress)_
+### Now: v1.1 (agreed with the user on 2026-10-24, one PR each)
+- [x] **Clean garments before try-on:** BiRefNet on CPU, cached, on by default (ADR-011)
+- [ ] **Persist looks and jobs** (SQLite) so they survive a server restart
+- [ ] **Upload your own garments** in the web app (delete applies to uploads only), with incremental indexing
+- [ ] **One-command start scripts** (`start.ps1` / `start.sh`)
+- [ ] **Browser end-to-end test** (Playwright, approved) in CI
+- [ ] **Screenshot of a finished try-on** for the README and user guide
 
-### Next (ideas, ranked)
-- [ ] **Screenshot of a finished try-on** (before/after view) for the README and user guide. It was skipped for v1.0.0 because the GPU was busy with another job.
-- [ ] **Cleaner garments before try-on:** remove the background and crop busy listing photos (text, props, beds). This is the biggest quality gap; see the user guide's limitations.
-- [ ] **Bring your own wardrobe:** upload and delete garments from the web app, with incremental indexing.
-- [ ] **Persist looks and jobs** (SQLite) so they survive a server restart.
-- [ ] **One-command start and Docker** (GPU image).
-- [ ] **Browser end-to-end test** (Playwright: search → pick → try on, with a fake model) in CI.
-- [ ] **Tag accuracy report:** hand-label about 50 photos and publish per-tag accuracy in `reports/`.
-- [ ] **Licensed demo catalogue,** which would allow unblurred screenshots and a public demo.
+### Skipped by the user (2026-10-24)
+- Docker image: not needed for local use; the start scripts cover it
+- Tag accuracy report: maybe later
+- Licensed demo catalogue from the user's own clothes: the user doesn't want to share their wardrobe
 
 ### Done
 - [x] v0.1.0: zero-shot tagging, search, old-vs-new evaluation, professional repo setup

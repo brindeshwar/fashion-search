@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from fashion_search import garment as garment_cleaning
 from fashion_search import tryon
 from fashion_search.api import create_api
 from fashion_search.jobs import JobQueue
@@ -18,7 +19,9 @@ def png_bytes(color="red") -> bytes:
 
 
 @pytest.fixture
-def client(catalog, tmp_path):
+def client(catalog, tmp_path, monkeypatch):
+    # Never run the real garment-cleaning model in fast tests, even if its weights exist.
+    monkeypatch.setattr(garment_cleaning, "weights_ready", lambda *a: False)
     for f in catalog.table.file:
         Image.new("RGB", (8, 8)).save(catalog.image_dir / f)
     # Fake embeddings: the query "points at" item 2; any uploaded image points at item 1.
@@ -92,8 +95,8 @@ def test_tryon_requires_a_garment(client, monkeypatch):
 def test_tryon_job_lifecycle(client, monkeypatch):
     calls = {}
 
-    def fake_try_on(person, garment, category, photo_type, steps, seed):
-        calls.update(category=category, photo_type=photo_type, steps=steps)
+    def fake_try_on(person, garment, category, photo_type, steps, seed, clean):
+        calls.update(category=category, photo_type=photo_type, steps=steps, clean=clean)
         return Image.new("RGB", (4, 4), "green")
 
     monkeypatch.setattr(tryon, "is_available", lambda *a: True)
@@ -101,7 +104,7 @@ def test_tryon_job_lifecycle(client, monkeypatch):
     r = client.post(
         "/api/tryon",
         files={"person": ("p.png", png_bytes(), "image/png")},
-        data={"garment_id": "3", "steps": "20"},
+        data={"garment_id": "3", "steps": "20", "clean_garment": "false"},
     )
     assert r.status_code == 202
     job_id = r.json()["id"]
@@ -112,14 +115,14 @@ def test_tryon_job_lifecycle(client, monkeypatch):
             break
         time.sleep(0.02)
     assert job["status"] == "done", job
-    assert calls == {"category": "tops", "photo_type": "model", "steps": 20}
+    assert calls == {"category": "tops", "photo_type": "model", "steps": 20, "clean": False}
     result = client.get(job["result_url"])
     assert result.headers["content-type"] == "image/png"
     assert Image.open(io.BytesIO(result.content)).size == (4, 4)
 
 
 def test_tryon_errors_are_reported(client, monkeypatch):
-    def boom(*a):
+    def boom(*a, **kw):
         raise RuntimeError("CUDA out of memory")
 
     monkeypatch.setattr(tryon, "is_available", lambda *a: True)

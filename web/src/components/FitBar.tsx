@@ -5,6 +5,7 @@ export interface FitSettings {
   photoType: PhotoType
   steps: number
   seed: number
+  cleanGarment: boolean
 }
 
 interface Props {
@@ -99,6 +100,17 @@ export function FitBar({
             <span className="slider__ends">
               <span>Faster</span>
               <span>Sharper</span>
+            </span>
+          </label>
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={settings.cleanGarment}
+              onChange={(e) => onSettings({ ...settings, cleanGarment: e.target.checked })}
+            />
+            <span>
+              Clean up garment photo
+              <small>Removes the background and crops to the garment</small>
             </span>
           </label>
           <label className="seed">

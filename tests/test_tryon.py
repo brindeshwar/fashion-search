@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 from PIL import Image
 
-from fashion_search import tryon
+from fashion_search import garment, tryon
 from fashion_search.cli import build_parser
 
 
@@ -33,6 +33,7 @@ def test_try_on_passes_options_to_pipeline(monkeypatch):
         return SimpleNamespace(images=[out])
 
     monkeypatch.setattr(tryon, "load_pipeline", lambda: fake_pipeline)
+    monkeypatch.setattr(garment, "weights_ready", lambda *a: False)
     person = Image.new("L", (8, 8))
     result = tryon.try_on(person, Image.new("RGBA", (8, 8)), "one-pieces", "model", 20, 7)
 
@@ -40,6 +41,23 @@ def test_try_on_passes_options_to_pipeline(monkeypatch):
     assert calls["person_image"].mode == "RGB" and calls["garment_image"].mode == "RGB"
     assert (calls["category"], calls["garment_photo_type"]) == ("one-pieces", "model")
     assert (calls["num_timesteps"], calls["seed"]) == (20, 7)
+
+
+def test_try_on_cleans_the_garment_when_available(monkeypatch):
+    seen = {}
+    cleaned = Image.new("RGB", (5, 5), "white")
+
+    def fake_pipeline(**kwargs):
+        seen["garment"] = kwargs["garment_image"]
+        return SimpleNamespace(images=[cleaned])
+
+    monkeypatch.setattr(tryon, "load_pipeline", lambda: fake_pipeline)
+    monkeypatch.setattr(garment, "weights_ready", lambda *a: True)
+    monkeypatch.setattr(garment, "clean_garment", lambda img: cleaned)
+    tryon.try_on(Image.new("RGB", (8, 8)), Image.new("RGB", (8, 8)))
+    assert seen["garment"].size == (5, 5)
+    tryon.try_on(Image.new("RGB", (8, 8)), Image.new("RGB", (8, 8)), clean=False)
+    assert seen["garment"].size == (8, 8)
 
 
 def test_load_pipeline_without_setup_explains_how_to_install(monkeypatch, tmp_path):
@@ -73,6 +91,11 @@ def test_no_vram_warning_once_our_pipeline_is_loaded(monkeypatch):
 class _Info:
     def __init__(self, currsize):
         self.currsize = currsize
+
+
+def test_tryon_cli_no_clean_flag():
+    args = build_parser().parse_args(["tryon", "--person", "p", "--garment", "g", "--no-clean"])
+    assert args.no_clean is True
 
 
 def test_tryon_cli_args():

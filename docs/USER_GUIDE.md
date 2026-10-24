@@ -79,14 +79,14 @@ Open **Fit settings** under the Try it on button.
 |---|---|---|
 | Garment photo | **On hanger / worn** suits most catalogue photos (garments on hangers, people or tables). **Flat lay** is for clean product shots laid flat. If a result looks wrong (missing sleeves, odd shape), try the other one. | On hanger / worn |
 | Quality | Steps of the generation process. More steps give sharper detail but take longer (10 = fastest, 50 = sharpest). | 30 |
+| Clean up garment photo | Cuts the garment out of its photo (removing beds, walls, props and price text) and crops to it before try-on. Turn it off if the cut-out misses part of the garment. | On |
 | Variation | A seed number. The same photo, garment and seed give the same result; change it for a slightly different take. | 42 |
 
 ## Known limitations
 
-- **Busy garment photos give poor results.** Wrinkled shirts photographed on a bed or a
-  wall, or listing photos with text and props, can come out distorted or with bits of the
-  background "printed" onto the garment. Clean photos of a garment on a hanger or a person
-  work well.
+- **Busy garment photos can still give poor results.** "Clean up garment photo" removes
+  backgrounds, props and text, but a heavily wrinkled or folded shirt keeps its shape, and
+  the result can look crumpled. Photos of a garment on a hanger or a person work best.
 - **One try-on at a time.** The GPU handles one job; others wait in the queue.
 - **It's slow on CPU.** Without an NVIDIA GPU, search still works, but try-on takes many minutes.
 - **Tops are the focus.** The catalogue is shirts. Dresses are sent to the model as one-piece

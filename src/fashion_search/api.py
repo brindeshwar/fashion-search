@@ -19,6 +19,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel
 
 from . import __version__, tryon
+from . import garment as garment_cleaning
 from .catalog import Catalog
 from .config import REPO_ROOT
 from .jobs import JobQueue
@@ -66,6 +67,7 @@ class Health(BaseModel):
     tryon_available: bool
     tryon_setup_hint: str | None
     gpu_warning: str | None
+    garment_cleaning_available: bool
 
 
 def _read_image(upload: UploadFile) -> Image.Image:
@@ -135,6 +137,7 @@ def create_api(
             tryon_available=available,
             tryon_setup_hint=None if available else tryon.INSTALL_HINT,
             gpu_warning=tryon.low_vram_warning() if available else None,
+            garment_cleaning_available=garment_cleaning.weights_ready(),
         )
 
     @app.get("/api/tags", response_model=dict[str, list[str]])
@@ -174,8 +177,8 @@ def create_api(
 
     @app.get("/images/{filename}")
     def image(filename: str):
-        # Only serve files that are in the catalogue: blocks path traversal.
         """Serve a catalogue photo. Only files in the catalogue are served."""
+        # Checking against the catalogue's own filenames also blocks path traversal.
         if filename not in files:
             raise HTTPException(404, "No such image.")
         cache = {"Cache-Control": "max-age=86400"}
@@ -190,6 +193,7 @@ def create_api(
         garment_photo_type: Annotated[tryon.GarmentPhotoType, Form()] = "model",
         steps: Annotated[int, Form(ge=10, le=50)] = 30,
         seed: Annotated[int, Form()] = 42,
+        clean_garment: Annotated[bool, Form()] = True,
     ):
         """Start a try-on job (202). Poll `GET /api/tryon/{id}` for progress."""
         if not tryon.is_available():
@@ -198,7 +202,8 @@ def create_api(
         if garment is not None:
             garment_img = _read_image(garment)
         elif garment_id is not None and 0 <= garment_id < len(catalog):
-            garment_img = Image.open(catalog.path(garment_id)).convert("RGB")
+            garment_path = Path(catalog.path(garment_id))
+            garment_img = None  # loaded on the worker: cleaning a new garment takes ~10 s
             tag = str(catalog.table.category.iloc[garment_id])
             category = category or tryon.fashn_category(tag)
         else:
@@ -207,8 +212,20 @@ def create_api(
         def run() -> bytes:
             """Run the try-on on the job worker; returns PNG bytes."""
             t0 = time.time()
+            image, clean = garment_img, clean_garment
+            if image is None:  # a catalogue garment: use the on-disk cache of cleaned photos
+                if clean and garment_cleaning.weights_ready():
+                    image, clean = garment_cleaning.clean_file(garment_path), False
+                else:
+                    image = Image.open(garment_path).convert("RGB")
             out = tryon.try_on(
-                person_img, garment_img, category or "tops", garment_photo_type, steps, seed
+                person_img,
+                image,
+                category or "tops",
+                garment_photo_type,
+                steps,
+                seed,
+                clean=clean,
             )
             durations.append(time.time() - t0)
             buf = io.BytesIO()

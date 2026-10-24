@@ -35,6 +35,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_tryon.add_argument("--garment-photo-type", choices=["flat-lay", "model"], default="model")
     p_tryon.add_argument("--steps", type=int, default=30)
     p_tryon.add_argument("--seed", type=int, default=42)
+    p_tryon.add_argument(
+        "--no-clean", action="store_true", help="Skip background removal of the garment photo"
+    )
     return parser
 
 
@@ -62,15 +65,19 @@ def main(argv: list[str] | None = None) -> None:
     elif args.command == "tryon":
         from PIL import Image
 
+        from . import garment
         from .tryon import try_on
 
+        clean = not args.no_clean and garment.weights_ready()
+        garment_img = garment.clean_file(args.garment) if clean else Image.open(args.garment)
         result = try_on(
             Image.open(args.person),
-            Image.open(args.garment),
+            garment_img,
             args.category,
             args.garment_photo_type,
             args.steps,
             args.seed,
+            clean=False,  # already cleaned (and cached) above
         )
         result.save(args.out)
         print(f"Saved {args.out}")

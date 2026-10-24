@@ -18,5 +18,11 @@ REPORTS_DIR = _path("FASHION_REPORTS_DIR", REPO_ROOT / "reports")
 TRYON_WEIGHTS_DIR = _path(
     "FASHION_TRYON_WEIGHTS_DIR", REPO_ROOT / "artifacts" / "weights" / "fashn-vton-1.5"
 )
+BIREFNET_PATH = _path(
+    "FASHION_BIREFNET_PATH",
+    REPO_ROOT / "artifacts" / "weights" / "birefnet" / "BiRefNet-general-epoch_244.onnx",
+)
+
+CLEANED_DIR = _path("FASHION_CLEANED_DIR", REPO_ROOT / "artifacts" / "cleaned")
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
