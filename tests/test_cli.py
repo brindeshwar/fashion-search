@@ -11,8 +11,9 @@ def test_index_command_accepts_paths():
     assert args.data_dir == Path("x") and args.index_dir == Path("y")
 
 
-def test_app_default_port():
-    assert build_parser().parse_args(["app"]).port == 7860
+def test_serve_defaults_to_localhost():
+    args = build_parser().parse_args(["serve"])
+    assert (args.host, args.port) == ("127.0.0.1", 8000)
 
 
 def test_command_is_required():
@@ -20,7 +21,6 @@ def test_command_is_required():
         build_parser().parse_args([])
 
 
-def test_app_ui_builds_without_loading_model(catalog):
-    from fashion_search.app import build_app
-
-    assert build_app(catalog) is not None
+def test_removed_gradio_command_is_rejected():
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["app"])

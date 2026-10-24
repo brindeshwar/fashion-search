@@ -1,4 +1,4 @@
-"""Command-line entry point: ``fashion-search {index,serve,app,evaluate,tryon,tryon-download}``."""
+"""Fashion search: index a wardrobe, serve the Mirror web app, and run virtual try-on."""
 
 import argparse
 from pathlib import Path
@@ -8,6 +8,7 @@ from .config import DATA_DIR, INDEX_DIR
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Argument parser for every `fashion-search` subcommand."""
     parser = argparse.ArgumentParser(prog="fashion-search", description=__doc__)
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -21,11 +22,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_serve.add_argument("--index-dir", type=Path, default=INDEX_DIR)
     p_serve.add_argument("--host", default="127.0.0.1")
     p_serve.add_argument("--port", type=int, default=8000)
-
-    p_app = sub.add_parser("app", help="Launch the Gradio developer UI on :7860")
-    p_app.add_argument("--data-dir", type=Path, default=DATA_DIR)
-    p_app.add_argument("--index-dir", type=Path, default=INDEX_DIR)
-    p_app.add_argument("--port", type=int, default=7860)
 
     sub.add_parser("evaluate", help="Compare the 2025 MLP with zero-shot FashionSigLIP")
 
@@ -43,8 +39,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Entry point for the `fashion-search` command."""
     args = build_parser().parse_args(argv)
-    # Heavy imports (torch, gradio) are deferred so `--help` stays instant.
+    # Heavy imports (torch, fastapi, model code) are deferred so `--help` stays instant.
     if args.command == "index":
         from .indexing import build_index
 
@@ -54,11 +51,6 @@ def main(argv: list[str] | None = None) -> None:
         from .catalog import Catalog
 
         serve(Catalog.load(args.index_dir, args.data_dir), host=args.host, port=args.port)
-    elif args.command == "app":
-        from .app import launch
-        from .catalog import Catalog
-
-        launch(Catalog.load(args.index_dir, args.data_dir), port=args.port)
     elif args.command == "evaluate":
         from .evaluate import run_evaluation
 

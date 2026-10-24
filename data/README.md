@@ -1,17 +1,21 @@
 # Data
 
-Everything in `data/` except this file is git-ignored (see `docs/DECISIONS.md`, ADR-004).
+Everything in `data/` except this file is git-ignored (see ADR-004 in `docs/DECISIONS.md`).
 
 | Folder | Contents | How to get it |
 |---|---|---|
-| `shirts/` | 500 shirt photos (JPG, ~106 MB) collected in 2025 from second-hand marketplace listings for the original project | Not redistributable. Use your own photos: any folder of JPG/PNG/WEBP images works |
-| `fashion_mnist/` | Fashion-MNIST, only used by `fashion-search evaluate` | Downloaded automatically by torchvision on first run |
+| `shirts/` | The garment catalogue: any JPG, PNG or WEBP photos. The original 500 photos came from second-hand marketplace listings in 2025 and can't be redistributed. | Add your own photos |
+| `fashion_mnist/` | Fashion-MNIST, used only by `fashion-search evaluate` | Downloaded automatically on first run |
+
+Photos of a single garment on a hanger, a person or a plain background work best, both for
+tagging and for try-on.
 
 To use a different folder without moving files:
 
 ```bash
 fashion-search index --data-dir path/to/photos
-fashion-search app   --data-dir path/to/photos
+fashion-search serve --data-dir path/to/photos
 ```
 
-Or set `FASHION_DATA_DIR`. Generated indexes go to `artifacts/index/` (`FASHION_INDEX_DIR`).
+Or set `FASHION_DATA_DIR`. Rerun `fashion-search index` after adding or removing photos;
+the index goes to `artifacts/index/` (`FASHION_INDEX_DIR`).

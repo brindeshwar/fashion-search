@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fashion-search"
-version = "0.3.0"
-description = "Fashion visual search and zero-shot tagging with Marqo-FashionSigLIP"
+version = "1.0.0"
+description = "Fashion visual search, zero-shot tagging and virtual try-on, with a React web app"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
@@ -17,7 +17,6 @@ dependencies = [
     "open_clip_torch>=3.0",
     "transformers>=4.40",
     "sentencepiece",
-    "gradio>=5.0",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "python-multipart>=0.0.9",

@@ -17,6 +17,8 @@ Status = Literal["queued", "running", "done", "error"]
 
 @dataclass
 class Job:
+    """One unit of background work and its outcome."""
+
     id: str
     status: Status = "queued"
     created: float = field(default_factory=time.time)
@@ -27,6 +29,8 @@ class Job:
 
 
 class JobQueue:
+    """FIFO queue processed by a single worker thread (one GPU, one job at a time)."""
+
     def __init__(self, max_kept: int = 50):
         self._jobs: dict[str, Job] = {}
         self._order: list[str] = []
@@ -36,6 +40,7 @@ class JobQueue:
         threading.Thread(target=self._worker, daemon=True, name="job-worker").start()
 
     def submit(self, fn: Callable[[], Any]) -> Job:
+        """Queue `fn` to run on the worker and return its job immediately."""
         job = Job(id=uuid.uuid4().hex[:12])
         with self._lock:
             self._jobs[job.id] = job
@@ -50,6 +55,7 @@ class JobQueue:
         return job
 
     def get(self, job_id: str) -> Job | None:
+        """The job with this id, or None if unknown or already discarded."""
         return self._jobs.get(job_id)
 
     def position(self, job: Job) -> int:
