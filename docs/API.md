@@ -61,12 +61,14 @@ Server status, used for the app's status pill.
   "items": 500,
   "tryon_available": true,
   "tryon_setup_hint": null,
-  "gpu_warning": null
+  "gpu_warning": null,
+  "garment_cleaning_available": true
 }
 ```
 
 `gpu_warning` explains when another process holds so much GPU memory that try-on will be
 slow. `tryon_setup_hint` gives the install commands when try-on isn't available.
+`garment_cleaning_available` is true when the BiRefNet weights for garment cleaning are downloaded.
 
 ### `GET /api/tags`
 
@@ -127,6 +129,7 @@ Multipart form fields:
 | `garment_photo_type` | no | `model` (default; hanger or worn) or `flat-lay` |
 | `steps` | no | 10–50, default 30 |
 | `seed` | no | Integer, default 42 |
+| `clean_garment` | no | `true` (default) removes the garment photo's background and crops to the garment before try-on; skipped if the BiRefNet weights are missing |
 
 Errors: 503 (try-on not installed; `detail` has the setup commands), 422 (no garment, or an
 invalid field), 400 and 413 (bad or oversized image).

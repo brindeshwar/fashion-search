@@ -70,3 +70,14 @@ and mark the old one `Superseded`. Format: context → decision → consequences
 - **Context:** Since v0.3 the React Mirror app (ADR-009) does everything the Gradio UI did (text and image search, tag filters, try-on) and more. Keeping both meant two UIs to maintain, about 30 extra dependencies, and docs that pointed people at two different ports.
 - **Decision:** delete `app.py`, the `fashion-search app` command and the `gradio` dependency. `fashion-search serve` is the only UI.
 - **Consequences:** smaller install and one UI to maintain. The interactive OpenAPI page at `/docs` (FastAPI) is the developer tool for poking the backend.
+
+## ADR-011: Clean garment photos with BiRefNet on the CPU, on by default
+- **Date:** 2026-10-24 · **Status:** Accepted
+- **Context:** Catalogue photos show shirts on beds, walls and grass, often with price text; FASHN VTON can copy those into the result (ADR-008). The user approved adding a background-removal model.
+- **Alternatives:** BRIA RMBG-2.0 (non-commercial licence); rembg (wraps the same models but needs the CPU `onnxruntime`, which conflicts with `onnxruntime-gpu`); BiRefNet via `transformers` (`trust_remote_code`); the official BiRefNet ONNX export run directly with our existing ONNX Runtime.
+- **Decision:** the official `BiRefNet-general-epoch_244.onnx` (MIT, 927 MB, size-verified on download) run with ONNX Runtime **on the CPU**. The garment is placed on white and cropped with a 6% margin. Cleaned catalogue garments are cached on disk (`artifacts/cleaned/`). On by default in the API, CLI and UI (`clean_garment` / `--no-clean`).
+- **Evidence (RTX 4060, 8 GB):**
+  - On the GPU, BiRefNet's ONNX Runtime arena took *all* free memory (6.9 GB → 0) and failed with a 2 GB or 3 GB cap. With the try-on model resident, try-on spilled into system RAM and made no progress in 12 minutes. Released sessions return the memory, but the model can't co-exist with try-on on 8 GB.
+  - On the CPU: 11–17 s per garment (6 measured), with no GPU memory used; try-on peaked at 3.6 GB of PyTorch memory with no spill.
+  - Quality on 6 garments (raw vs cleaned, "model" mode): cleaning fixed 1 (striped shirt: no floor-length drape), was neutral on 4, and didn't help 1 (wrinkled shirt on a bed); it never made a result worse. With cleaned input, "flat-lay" mode was still worse on 3 of 6, so ADR-008's "model" default stands.
+- **Consequences:** the first try-on of each garment takes ~15 s longer, later ones nothing extra; downloads grow by ~930 MB; ~1–2 GB of RAM is used while the model is loaded. Revisit GPU inference (or the 213 MB `swin_v1_tiny` variant) on cards with more VRAM.

@@ -31,6 +31,7 @@ softmax over dot products with the prompts for each attribute. No training happe
 | `indexing.py` | `build_index(data_dir, index_dir)`: embeds, tags and saves | via core |
 | `evaluate.py` | Old MLP vs zero-shot comparison; writes `reports/results.md` | yes |
 | `tryon.py` | Optional FASHN VTON v1.5 wrapper: `is_available`, `download_weights`, `load_pipeline` (cached, lazy), `try_on`, `fashn_category` | lazily (via `fashn_vton`) |
+| `garment.py` | Garment cleaning before try-on: BiRefNet (official ONNX export, run with onnxruntime-gpu) predicts a foreground mask; `composite_and_crop` (pure NumPy/PIL) puts the garment on white and crops to it with a margin, returning the photo unchanged if the mask is empty | no (ONNX Runtime, imports torch only to load CUDA DLLs) |
 | `jobs.py` | `JobQueue`: one worker thread, in-memory jobs (queued, running, done or error), queue position | no |
 | `api.py` | FastAPI app (`create_api`) for the React UI: items (text + tags combined), image search, images, try-on jobs; also serves `web/dist` | lazily (embed functions are injectable for tests) |
 | `cli.py` | `fashion-search {index,serve,evaluate,tryon,tryon-download}`; heavy imports are deferred | no |
@@ -53,7 +54,7 @@ softmax over dot products with the prompts for each attribute. No training happe
 
 ```
  person photo ─┐
-               ├─► tryon.try_on ─► fashn_vton.TryOnPipeline ─► result image
+               ├─► tryon.try_on ─► garment.clean_garment (BiRefNet, optional) ─► fashn_vton.TryOnPipeline ─► result image
  garment ──────┘     (category: tops | bottoms | one-pieces, garment photo: flat-lay | model)
    └─ a catalogue item or an upload (POST /api/tryon), or a file (`fashion-search tryon`)
 ```

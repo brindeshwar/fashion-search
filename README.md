@@ -18,7 +18,7 @@ on yourself** with virtual try-on. Everything runs locally on your own GPU.
 |---|---|
 | **Zero-shot tagging** | Every photo gets a category, colour, pattern, sleeve and style tag from [Marqo-FashionSigLIP](https://huggingface.co/Marqo/marqo-fashionSigLIP). No training and no labels needed. |
 | **Search** | Describe a garment ("red plaid flannel with long sleeves"), upload a similar photo, or filter by tags, alone or combined. |
-| **Virtual try-on** | Put a garment on a photo of a person with [FASHN VTON v1.5](https://github.com/fashn-AI/fashn-vton-1.5): about 50 s on an 8 GB laptop GPU, with a before/after view. |
+| **Virtual try-on** | Put a garment on a photo of a person with [FASHN VTON v1.5](https://github.com/fashn-AI/fashn-vton-1.5): about 50 s on an 8 GB laptop GPU, with a before/after view. Garment photos are cleaned first ([BiRefNet](https://github.com/ZhengPeng7/BiRefNet) background removal). |
 | **Mirror web app** | React + TypeScript frontend on a FastAPI backend, in light and dark themes, down to phone width. |
 
 ## Quickstart

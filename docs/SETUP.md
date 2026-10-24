@@ -54,15 +54,16 @@ It binds to localhost only by default, because the API has no authentication.
 
 ## Virtual try-on (optional)
 
-Try-on needs an NVIDIA GPU with about 8 GB VRAM, and about 2.2 GB of downloads.
+Try-on needs an NVIDIA GPU with about 8 GB VRAM, and about 3.2 GB of downloads.
 
 ```bash
 .venv/Scripts/python -m pip install -e ".[tryon]"
 .venv/Scripts/fashion-search tryon-download
 ```
 
-The weights go to `artifacts/weights/fashn-vton-1.5/`, and the human parser to the
-Hugging Face cache. Restart `serve`; the status pill should say "try-on ready".
+The weights go to `artifacts/weights/fashn-vton-1.5/`, the human parser to the
+Hugging Face cache, and the BiRefNet garment-cleaning model (~930 MB, MIT licence) to
+`artifacts/weights/birefnet/`. Restart `serve`; the status pill should say "try-on ready".
 
 You can also run a try-on from the command line:
 
@@ -83,6 +84,7 @@ Every path can be changed with an environment variable (see `src/fashion_search/
 | `FASHION_DATA_DIR` | `data/shirts` | Garment photos |
 | `FASHION_INDEX_DIR` | `artifacts/index` | Generated embeddings and tags |
 | `FASHION_TRYON_WEIGHTS_DIR` | `artifacts/weights/fashn-vton-1.5` | Try-on weights |
+| `FASHION_BIREFNET_PATH` | `artifacts/weights/birefnet/BiRefNet-general-epoch_244.onnx` | Garment-cleaning model |
 | `FASHION_MNIST_DIR` | `data/fashion_mnist` | Dataset for `fashion-search evaluate` |
 | `FASHION_REPORTS_DIR` | `reports` | Where `evaluate` writes results |
 | `FASHION_MODEL_ID` | `hf-hub:Marqo/marqo-fashionSigLIP` | Search and tagging model |
