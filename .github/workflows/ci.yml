@@ -55,3 +55,33 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      # The browser tests use fake models (tests/e2e_server.py): CPU torch is enough.
+      - run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e .
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - working-directory: web
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+          npm run e2e
+        env:
+          PYTHON: python
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: web/test-results/

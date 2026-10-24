@@ -36,3 +36,7 @@ Thumbs.db
 .claude/*
 !.claude/launch.json
 CLAUDE.local.md
+
+# Playwright
+web/test-results/
+web/playwright-report/
