@@ -50,6 +50,16 @@ garment) are saved on your computer in `artifacts/looks/` until you delete them.
 The tags (colour, pattern and so on) are generated automatically by the model, so the
 occasional one will be wrong.
 
+### Add your own garments
+
+Click **Add yours** at the top of the wardrobe and choose a photo of a garment. It's tagged
+and added straight away: the wardrobe switches to the **Yours** filter with the new garment
+selected, ready to try on. Your garments have a **Yours** badge; hover over one and click the
+bin icon to delete it. (The original catalogue can't be deleted from the app.)
+
+Uploaded photos are saved on your computer in the catalogue folder (`data/shirts/`, named
+`upload-…jpg`), so they stay after a restart and are kept if you re-run `fashion-search index`.
+
 ## 3. Try it on
 
 Click a garment (it gets a check mark and appears in the fit bar), then click **Try it on**.

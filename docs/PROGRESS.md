@@ -14,7 +14,7 @@ end to end on the RTX 4060; all checks pass.
 ### Now: v1.1 (agreed with the user on 2026-10-24, one PR each)
 - [x] **Clean garments before try-on:** BiRefNet on CPU, cached, on by default (ADR-011)
 - [x] **Persist looks** (SQLite + PNG files) so they survive a server restart
-- [ ] **Upload your own garments** in the web app (delete applies to uploads only), with incremental indexing
+- [x] **Upload your own garments** in the web app (delete applies to uploads only), with incremental indexing (ADR-012)
 - [x] **One-command start scripts** (`start.ps1` / `start.sh`)
 - [ ] **Browser end-to-end test** (Playwright, approved) in CI
 - [ ] **Screenshot of a finished try-on** for the README and user guide

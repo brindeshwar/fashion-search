@@ -25,12 +25,17 @@ The API has no authentication, so keep it on localhost. Errors are JSON:
     "style": "casual"
   },
   "tryon_category": "tops",
-  "score": 0.1312
+  "score": 0.1312,
+  "uploaded": false
 }
 ```
 
 `score` is the cosine similarity to the query (higher means closer), or `null` when there's
-no query. `tryon_category` is `tops`, `bottoms` or `one-pieces`.
+no query. `tryon_category` is `tops`, `bottoms` or `one-pieces`. `uploaded` is true for
+garments added through the app (only those can be deleted).
+
+Item ids are row positions in the catalogue: deleting an uploaded garment shifts every later
+id down by one, so re-fetch items after a delete instead of caching ids.
 
 **TryOnJob**
 
@@ -108,6 +113,7 @@ Search and filter the catalogue.
 | `q` | string, ≤200 chars | (empty) | Text query. Results are ranked by similarity. Empty means catalogue order. |
 | `limit` | int, 1–200 | 48 | Maximum number of items returned |
 | `category`, `color`, `pattern`, `sleeve`, `style` | string | (none) | Exact tag match. Combine any of them with each other and with `q`. |
+| `uploaded` | bool | false | Only garments added through the app |
 
 Response: `{"items": [Item, ...], "total": <number of items matching the filters>}`.
 
@@ -129,6 +135,23 @@ Response: `{"items": [...], "total": ...}`. Errors: 400 (not a readable image), 
 ### `GET /api/items/{id}`
 
 A single item. Returns 404 if the id doesn't exist.
+
+### `POST /api/items`
+
+Add your own garment photo (multipart field `image`). It's saved to the catalogue folder as
+`upload-<id>.jpg` (resized to at most 2048 px), embedded, zero-shot tagged and appended to the
+index, so it's searchable immediately and still there after a restart. Returns **201** with the
+new Item. Errors: 400 (not a readable image), 413 (over 15 MB).
+
+```bash
+curl -F image=@my-shirt.jpg http://127.0.0.1:8000/api/items
+```
+
+### `DELETE /api/items/{id}`
+
+Delete a garment you added: the photo file and its index row. Returns 204; **403** for the
+original catalogue (it can't be deleted through the API); 404 for an unknown id. Saved looks
+of a deleted garment keep their image but lose the link (`garment_id` becomes `null`).
 
 ### `GET /images/{filename}`
 

@@ -10,6 +10,10 @@ Everything in `data/` except this file is git-ignored (see ADR-004 in `docs/DECI
 Photos of a single garment on a hanger, a person or a plain background work best, both for
 tagging and for try-on.
 
+Garments added from the web app ("Add yours") are saved here too, as `upload-<id>.jpg`. The
+prefix marks them as yours: only they can be deleted from the app, and they stay yours after a
+re-index.
+
 To use a different folder without moving files:
 
 ```bash
