@@ -16,3 +16,8 @@ export function statusText(job: TryOnJob, elapsed: number): string {
   const left = Math.max(0, Math.round(job.expected_seconds - elapsed))
   return left > 0 ? `Fitting the garment… about ${left} s left` : 'Almost there…'
 }
+
+/** "1 piece", "2 pieces". */
+export function pieces(n: number): string {
+  return `${n} ${n === 1 ? 'piece' : 'pieces'}`
+}

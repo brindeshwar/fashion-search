@@ -13,6 +13,7 @@ import {
   type Item,
   type SavedLook,
 } from './lib/api'
+import { pieces } from './lib/progress'
 
 export default function App() {
   const [health, setHealth] = useState<Health | null>(null)
@@ -78,8 +79,8 @@ export default function App() {
             : !health
               ? 'Connecting…'
               : health.tryon_available
-                ? `${health.items} pieces · try-on ready`
-                : `${health.items} pieces · search only`}
+                ? `${pieces(health.items)} · try-on ready`
+                : `${pieces(health.items)} · search only`}
         </span>
       </header>
 
@@ -118,6 +119,13 @@ export default function App() {
           onSelect={(item) => {
             setGarment(item)
             if (state.phase === 'done' || state.phase === 'error') reset()
+          }}
+          onChanged={(deletedId) => {
+            getHealth().then(setHealth, () => {}) // the item count in the status pill
+            if (deletedId === undefined) return
+            // Ids after the deleted garment shift down by one, so clear the selection.
+            setGarment(null)
+            refreshLooks()
           }}
         />
       </main>

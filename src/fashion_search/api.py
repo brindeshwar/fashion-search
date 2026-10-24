@@ -6,7 +6,9 @@ Models load lazily on first use, so the API starts in about a second.
 """
 
 import io
+import threading
 import time
+import uuid
 from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, Literal
@@ -20,8 +22,8 @@ from pydantic import BaseModel
 
 from . import __version__, tryon
 from . import garment as garment_cleaning
-from .catalog import Catalog
-from .config import DB_PATH, LOOKS_DIR, REPO_ROOT
+from .catalog import UPLOAD_PREFIX, Catalog
+from .config import DB_PATH, INDEX_DIR, LOOKS_DIR, REPO_ROOT
 from .jobs import Job, JobQueue
 from .store import Look, LookStore
 from .taxonomy import ATTRIBUTES
@@ -39,6 +41,7 @@ class Item(BaseModel):
     tags: dict[str, str]
     tryon_category: tryon.FashnCategory
     score: float | None = None
+    uploaded: bool = False
 
 
 class ItemList(BaseModel):
@@ -113,17 +116,22 @@ def create_api(
     jobs: JobQueue | None = None,
     web_dist: Path = WEB_DIST,
     store: LookStore | None = None,
+    index_dir: Path = INDEX_DIR,
+    tag_rows: Callable[[np.ndarray], list[dict]] | None = None,
 ) -> FastAPI:
-    """Build the app. The embed functions are injectable so tests don't load the model."""
+    """Build the app. Models, storage and paths are injectable so tests don't touch them."""
     if embed_text is None or embed_image is None:
         from .core import embed_images, embed_texts
 
         embed_text = embed_text or (lambda q: embed_texts([q])[0])
         embed_image = embed_image or (lambda im: embed_images([im])[0])
+    if tag_rows is None:
+        from .indexing import tag_rows
     jobs = jobs or JobQueue()
     store = store or LookStore(DB_PATH, LOOKS_DIR)
     durations: list[float] = []
     files = set(catalog.table.file)
+    edit_lock = threading.Lock()  # one catalogue change (and index save) at a time
 
     app = FastAPI(title="Fashion Search API", version=__version__)
 
@@ -136,6 +144,7 @@ def create_api(
             tags={attr: str(row[attr]) for attr in ATTRIBUTES},
             tryon_category=tryon.fashn_category(str(row["category"])),
             score=None if score is None else round(score, 4),
+            uploaded=catalog.is_upload(i),
         )
 
     def job_view(job) -> TryOnJob:
@@ -157,20 +166,23 @@ def create_api(
         )
 
     def saved_look(look: Look) -> SavedLook:
-        """Build the API view of a saved look."""
-        known = look.garment_id is not None and 0 <= look.garment_id < len(catalog)
+        """Build the API view of a saved look (the garment may since have been deleted)."""
+        fields = vars(look).copy()
+        file = fields.pop("garment_file")
+        row = catalog.index_of(file) if file else None
         return SavedLook(
-            **vars(look),
+            **fields,
+            garment_id=row,
             image_url=f"/api/looks/{look.id}/image",
-            garment_image_url=item(look.garment_id).image_url if known else None,
+            garment_image_url=item(row).image_url if row is not None else None,
         )
 
-    def garment_label(garment_id: int | None) -> str:
+    def garment_label(row: int | None) -> str:
         """Short description of the garment for the looks list."""
-        if garment_id is None:
+        if row is None:
             return "Uploaded garment"
-        row = catalog.table.iloc[garment_id]
-        return f"{row['color']} {row['pattern']}"
+        tags = catalog.table.iloc[row]
+        return f"{tags['color']} {tags['pattern']}"
 
     @app.get("/api/health", response_model=Health)
     def health():
@@ -199,12 +211,16 @@ def create_api(
         pattern: str | None = None,
         sleeve: str | None = None,
         style: str | None = None,
+        uploaded: bool = False,
     ):
-        """Search the catalogue: optional text query ranked by similarity, plus tag filters."""
+        """Search the catalogue: optional text query ranked by similarity, plus tag filters.
+
+        `uploaded=true` limits results to garments you added.
+        """
         filters = dict(category=category, color=color, pattern=pattern, sleeve=sleeve, style=style)
         query = embed_text(q.strip()) if q.strip() else None
-        total = len(catalog.filter(**filters))
-        hits = catalog.search(query, limit, **filters)
+        total = len(catalog.filter(uploaded, **filters))
+        hits = catalog.search(query, limit, uploaded, **filters)
         return ItemList(items=[item(i, s) for i, s in hits], total=total)
 
     @app.post("/api/items/search-by-image", response_model=ItemList)
@@ -219,6 +235,34 @@ def create_api(
         if not 0 <= item_id < len(catalog):
             raise HTTPException(404, "No such item.")
         return item(item_id)
+
+    @app.post("/api/items", response_model=Item, status_code=201)
+    def add_item(image: UploadFile):
+        """Add your own garment photo: it's saved, tagged and searchable straight away."""
+        img = _read_image(image)
+        img.thumbnail((2048, 2048))  # plenty for search and try-on; keeps the folder small
+        emb = embed_image(img)
+        tags = tag_rows(emb[None])[0]
+        file = f"{UPLOAD_PREFIX}{uuid.uuid4().hex[:12]}.jpg"
+        with edit_lock:
+            img.save(catalog.image_dir / file, quality=92)
+            i = catalog.add(file, emb, tags)
+            catalog.save(index_dir)
+            files.add(file)
+        return item(i)
+
+    @app.delete("/api/items/{item_id}", status_code=204)
+    def delete_item(item_id: int):
+        """Delete a garment you added. The original catalogue can't be deleted here."""
+        with edit_lock:
+            if not 0 <= item_id < len(catalog):
+                raise HTTPException(404, "No such item.")
+            if not catalog.is_upload(item_id):
+                raise HTTPException(403, "Only garments you added can be deleted.")
+            file = catalog.remove(item_id)
+            catalog.save(index_dir)
+            files.discard(file)
+        (catalog.image_dir / file).unlink(missing_ok=True)
 
     @app.get("/images/{filename}")
     def image(filename: str):
@@ -244,15 +288,19 @@ def create_api(
         if not tryon.is_available():
             raise HTTPException(503, tryon.INSTALL_HINT)
         person_img = _read_image(person)
+        garment_file: str | None = None
         if garment is not None:
             garment_img = _read_image(garment)
         elif garment_id is not None and 0 <= garment_id < len(catalog):
             garment_path = Path(catalog.path(garment_id))
+            garment_file = garment_path.name
             garment_img = None  # loaded on the worker: cleaning a new garment takes ~10 s
             tag = str(catalog.table.category.iloc[garment_id])
             category = category or tryon.fashn_category(tag)
         else:
             raise HTTPException(422, "Choose a garment from the catalogue or upload one.")
+
+        label = garment_label(garment_id if garment is None else None)  # before rows can shift
 
         def run(job: Job) -> bytes:
             """Run the try-on on the job worker, save it as a look, return PNG bytes."""
@@ -279,8 +327,8 @@ def create_api(
             look = Look(
                 id=job.id,
                 created=time.time(),
-                garment_id=garment_id if garment is None else None,
-                garment_label=garment_label(garment_id if garment is None else None),
+                garment_file=garment_file,
+                garment_label=label,
                 garment_photo_type=garment_photo_type,
                 steps=steps,
                 seed=seed,

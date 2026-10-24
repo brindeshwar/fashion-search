@@ -10,6 +10,7 @@ export interface Item {
   tags: Record<TagName, string>
   tryon_category: FashnCategory
   score: number | null
+  uploaded: boolean
 }
 
 export interface ItemList {
@@ -78,9 +79,16 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 export const getHealth = () => request<Health>('/api/health')
 export const getTags = () => request<Record<TagName, string[]>>('/api/tags')
 
-export function getItems(q: string, filters: Filters, limit: number, signal?: AbortSignal) {
+export function getItems(
+  q: string,
+  filters: Filters,
+  limit: number,
+  signal?: AbortSignal,
+  uploadedOnly = false,
+) {
   const params = new URLSearchParams({ limit: String(limit) })
   if (q.trim()) params.set('q', q.trim())
+  if (uploadedOnly) params.set('uploaded', 'true')
   for (const [k, v] of Object.entries(filters)) if (v) params.set(k, v)
   return request<ItemList>(`/api/items?${params}`, { signal })
 }
@@ -121,4 +129,18 @@ export const getLooks = () => request<{ looks: SavedLook[] }>('/api/looks?limit=
 export async function deleteLook(id: string) {
   const res = await fetch(`/api/looks/${encodeURIComponent(id)}`, { method: 'DELETE' })
   if (!res.ok && res.status !== 404) throw new ApiError(`Couldn't delete the look (${res.status})`)
+}
+
+export function uploadGarment(image: File) {
+  const form = new FormData()
+  form.append('image', image)
+  return request<Item>('/api/items', { method: 'POST', body: form })
+}
+
+export async function deleteGarment(id: number) {
+  const res = await fetch(`/api/items/${id}`, { method: 'DELETE' })
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(body?.detail ?? `Couldn't delete the garment (${res.status})`)
+  }
 }

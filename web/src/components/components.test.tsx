@@ -19,6 +19,7 @@ const item: Item = {
   },
   tryon_category: 'tops',
   score: 0.12,
+  uploaded: false,
 }
 const settings = { photoType: 'model' as const, steps: 30, seed: 42, cleanGarment: true }
 
@@ -30,6 +31,23 @@ describe('GarmentCard', () => {
     expect(screen.getByText('red · long')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button'))
     expect(onSelect).toHaveBeenCalledWith(item)
+  })
+})
+
+describe('GarmentCard for your own garments', () => {
+  it('shows a badge and a delete button only for uploads', () => {
+    const onDelete = vi.fn()
+    const mine = { ...item, uploaded: true }
+    render(<GarmentCard item={mine} selected={false} onSelect={() => {}} onDelete={onDelete} />)
+    expect(screen.getByText('Yours')).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Delete your red checked plaid garment'))
+    expect(onDelete).toHaveBeenCalledWith(mine)
+  })
+
+  it('never offers delete for the original catalogue', () => {
+    render(<GarmentCard item={item} selected={false} onSelect={() => {}} onDelete={() => {}} />)
+    expect(screen.queryByText('Yours')).toBeNull()
+    expect(screen.queryByLabelText(/delete/i)).toBeNull()
   })
 })
 
