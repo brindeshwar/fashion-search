@@ -5,6 +5,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-05
+
 ### Changed
 - Dependencies: lucide-react 1.64.0, oxlint 1.90.0, jsdom 30.1.3 (tests only), ruff 0.17.3 (kept in step across `pyproject.toml`, pre-commit and CI), `actions/upload-artifact` v7. `npm audit` is clean.
 

@@ -4,6 +4,7 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![React](https://img.shields.io/badge/react-19-61dafb)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-complete-success)
 
 Search a wardrobe of clothing photos by **words**, **photo** or **tags**, then **see any piece
 on yourself** with virtual try-on. Everything runs locally on your own GPU.
@@ -87,6 +88,10 @@ shirt": it labels every inverted image "Shirt". Full table and method:
 | [API](docs/API.md) | REST endpoints with examples |
 | [Development](docs/DEVELOPMENT.md) | Dev loop, checks, common changes, releasing |
 | [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Progress](docs/PROGRESS.md) | Design, reasoning and status |
+
+**Project status:** complete (v1.1.1). Feature work is finished; only dependency updates are
+expected. Ideas that were considered but not built are listed in
+[docs/PROGRESS.md](docs/PROGRESS.md#possible-future-work).
 
 Contributions: see [CONTRIBUTING.md](CONTRIBUTING.md). AI coding agents: start with [AGENTS.md](AGENTS.md).
 
