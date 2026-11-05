@@ -6,8 +6,9 @@ handoff log grows past about three entries, move the older ones to `docs/history
 
 ## Status
 
-**Version:** 1.1.0 · **Health:** green: search, tagging, garment cleaning, try-on, saved looks,
-uploads and the web app verified end to end on the RTX 4060; unit, API and browser tests pass in CI.
+**Version:** 1.1.1 · **Status:** complete (concluded with the user on 2026-11-05). Feature
+work is finished; only dependency updates are expected. **Health:** green: every feature
+was verified end to end on the RTX 4060, and unit, API and browser tests pass in CI.
 
 ## Task board
 
@@ -20,12 +21,14 @@ uploads and the web app verified end to end on the RTX 4060; unit, API and brows
 - [x] **Screenshot of a finished try-on** for the README and user guide (no blur needed)
 
 ### Now
-- _(nothing in progress)_
+- _(nothing: the project is complete)_
 
-### Later (not planned)
-- Tag accuracy report: hand-label ~50 photos and publish per-tag accuracy (the user may do this later)
+### Possible future work
+Not planned; listed so a future contributor knows where to start.
+- Tag accuracy report: hand-label ~50 photos and publish per-tag accuracy in `reports/`
+- Run `start.sh` end to end on Linux/macOS (only syntax-checked so far; WSL would do)
 - GPU garment cleaning on cards with more than 8 GB, or the 213 MB BiRefNet `swin_v1_tiny` variant (ADR-011)
-- Run `start.sh` end to end on Linux/macOS (only syntax-checked so far)
+- Docker image and a public demo (needs a licensed catalogue, see ADR-004)
 
 ### Skipped by the user (2026-10-24)
 - Docker image: not needed for local use; the start scripts cover it
@@ -38,6 +41,7 @@ uploads and the web app verified end to end on the RTX 4060; unit, API and brows
 - [x] v0.3.0: Mirror web app (React + FastAPI), combined search, async try-on jobs
 - [x] v1.0.0: removed Gradio, reorganized docs (user, setup, API and development guides), dependency updates, releases tagged
 - [x] v1.1.0: garment cleaning, saved looks, your own garments, one-command start, Playwright e2e + CI, real screenshots, combined dependency updates
+- [x] v1.1.1: dependency updates (#28); project concluded
 
 ## Known issues
 - Try-on is still poor on heavily wrinkled garments photographed on beds; garment cleaning removes backgrounds, props and text but can't fix the garment's shape.
@@ -56,6 +60,13 @@ Newest first. Older entries: [`history/handoffs-2026-10.md`](history/handoffs-20
 **Watch out:** ...
 ```
 
+### 2026-11-05 · Claude Code (Opus 5.5): project concluded
+**Did:** merged the combined dependency update #28 (closed Dependabot #23–#27; ruff pins kept in step), released v1.1.1, and marked the project complete at the user's request: README status, this board ("Possible future work" instead of a plan), and the oldest handoff archived. No new testing was done in this session, as the user asked.
+
+**Next:** nothing planned. Expect only Dependabot updates: combine them into one PR and keep the ruff version identical in `pyproject.toml`, `.pre-commit-config.yaml` and `ci.yml`.
+
+**Watch out:** the GPU on the dev machine is shared with the user's other jobs; check `nvidia-smi` before any real try-on, and never stop processes you didn't start.
+
 ### 2026-10-24 · Claude Code (Opus 5.5): v1.1.0
 **Did:** with the user's approval of BiRefNet and Playwright (Docker and the tag report skipped; no personal wardrobe photos), shipped six PRs, all merged with CI green:
 - #16 garment cleaning: BiRefNet on CPU because its GPU arena starved try-on (ADR-011)
@@ -69,10 +80,3 @@ Then released v1.1.0. Tests: 63 pytest, 19 Vitest, 4 Playwright.
 **Next:** nothing planned; see "Later".
 
 **Watch out:** fast tests must never hit real `artifacts/` (inject `LookStore`, `index_dir` and `tag_rows`, and force `garment.weights_ready()` to False); this bit us twice. Item ids shift when uploads are deleted; store filenames. Keep the ruff pin identical in pyproject, pre-commit and ci.yml.
-
-### 2026-10-15 · Claude Code (Opus 5.5): v1.0.0 cleanup
-**Did:** merged Dependabot #1, #6 and #8 and closed #7 (Node 24 types; Dependabot now ignores major `@types/node`). Removed the Gradio UI (ADR-010). Wrote USER_GUIDE, SETUP, API and DEVELOPMENT, plus a docs index; rewrote README and CONTRIBUTING; added docstrings everywhere (they also feed `/docs`). Archived old handoffs. Moved the repo from `D:\PE_project` to `D:\Projects\fashion-search` and rebuilt `.venv` and the pre-commit hook there. All checks pass: 41 pytest, 13 Vitest, ruff, oxlint, tsc, build, and links.
-
-**Next:** the user merges the v1.0.0 PR, then tag v1.0.0. A finished-try-on screenshot is still missing (the GPU was busy).
-
-**Watch out:** the user runs long GPU benchmarks (`medsignal`, via Ollama) on this machine; try-on crawls while they run. The empty `D:\PE_project` folder is left for the user to delete (the tools refuse to remove the session's original folder).

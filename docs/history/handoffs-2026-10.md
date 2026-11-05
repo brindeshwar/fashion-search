@@ -3,6 +3,13 @@
 Handoff entries moved from `docs/PROGRESS.md` when v1.0.0 was prepared. Newest first,
 unchanged from when they were written; they describe the state at the time.
 
+### 2026-10-15 · Claude Code (Opus 5.5): v1.0.0 cleanup
+**Did:** merged Dependabot #1, #6 and #8 and closed #7 (Node 24 types; Dependabot now ignores major `@types/node`). Removed the Gradio UI (ADR-010). Wrote USER_GUIDE, SETUP, API and DEVELOPMENT, plus a docs index; rewrote README and CONTRIBUTING; added docstrings everywhere (they also feed `/docs`). Archived old handoffs. Moved the repo from `D:\PE_project` to `D:\Projects\fashion-search` and rebuilt `.venv` and the pre-commit hook there. All checks pass: 41 pytest, 13 Vitest, ruff, oxlint, tsc, build, and links.
+
+**Next:** the user merges the v1.0.0 PR, then tag v1.0.0. A finished-try-on screenshot is still missing (the GPU was busy).
+
+**Watch out:** the user runs long GPU benchmarks (`medsignal`, via Ollama) on this machine; try-on crawls while they run. The empty `D:\PE_project` folder is left for the user to delete (the tools refuse to remove the session's original folder).
+
 ### 2026-10-13 · Claude Code (Opus 5.5): v0.3 web app
 **Did:** fixed ORT on CPU (ADR-008) and opened PR #3 (CI green; merging was blocked by auto mode, so the user must merge). The user picked design 5, "Virtual mirror". Built a FastAPI backend and a React frontend (ADR-009), checked end to end in the browser on the real GPU, and fixed two bugs found while testing (the compare slider started fully on "before", and a false low-VRAM warning came from our own loaded model).
 

@@ -52,7 +52,7 @@ npm --prefix web ci && npm --prefix web run build
 npm --prefix web run dev                # frontend dev server on :5173 (proxies to :8000)
 .venv/Scripts/fashion-search evaluate   # writes reports/results.md (~3 min on GPU)
 
-# optional virtual try-on (~2 GB weights, ~8 GB VRAM)
+# optional virtual try-on (~3.2 GB weights incl. garment cleaning, ~8 GB VRAM)
 .venv/Scripts/python -m pip install -e ".[tryon]"
 .venv/Scripts/fashion-search tryon-download
 .venv/Scripts/fashion-search tryon --person p.jpg --garment g.jpg --out out.png
